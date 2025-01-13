@@ -6,7 +6,7 @@
 #    By: pmagnero <pmagnero@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/11/04 11:30:16 by pmagnero          #+#    #+#              #
-#    Updated: 2025/01/10 10:49:13 by pmagnero         ###   ########.fr        #
+#    Updated: 2025/01/13 11:03:21 by pmagnero         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -16,10 +16,12 @@ NAME				=	ircserv
 FLAG				= -Wall -Wextra -Werror -std=c++98 -pedantic
 
 SRCS				=	srcs/main.cpp \
-						srcs/Server.cpp
+						srcs/Server.cpp \
+						srcs/Client.cpp
 
 INC					=	includes
-INCS				= 	$(INC)/Server.hpp
+INCS				= 	$(INC)/Server.hpp \
+						$(INC)/Client.hpp
 
 OBJS_DIR			=	objs/
 OBJS				=	$(SRCS:.cpp=.o)

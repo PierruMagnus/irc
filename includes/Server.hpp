@@ -6,7 +6,7 @@
 /*   By: pmagnero <pmagnero@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/10 10:01:22 by pmagnero          #+#    #+#             */
-/*   Updated: 2025/01/10 14:37:34 by pmagnero         ###   ########.fr       */
+/*   Updated: 2025/01/13 11:25:35 by pmagnero         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,12 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/epoll.h>
+#include <arpa/inet.h>
+#include <netinet/tcp.h>
+#include <errno.h>
+#include <cstring>
+
+#include "Client.hpp"
 
 class Server
 {
@@ -26,6 +32,9 @@ class Server
 
 		void run();
 		void stop();
+
+		int accept_new_client(int fd);
+		void handle_client_event(int client_fd, uint32_t revents);
 	
 	private:
 		unsigned int _port;
@@ -35,5 +44,6 @@ class Server
 		// int _client_sock_fd;
 		sockaddr_in _serverAddr;
 		// sockaddr_in _clientAddr;
-
+		uint32_t client_map[10000];
+		Client clients[10];
 };
