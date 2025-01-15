@@ -6,7 +6,7 @@
 /*   By: pmagnero <pmagnero@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/10 10:01:22 by pmagnero          #+#    #+#             */
-/*   Updated: 2025/01/13 11:25:35 by pmagnero         ###   ########.fr       */
+/*   Updated: 2025/01/15 09:40:13 by pmagnero         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,10 @@
 #include <netinet/tcp.h>
 #include <errno.h>
 #include <cstring>
+#include <string>
+
+#include <vector>
+#include <algorithm>
 
 #include "Client.hpp"
 

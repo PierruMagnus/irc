@@ -54,6 +54,17 @@ void epoll_add_new(int epoll_fd, int serv_fd, uint32_t events)
 	}
 }
 
+void epoll_mod(int epoll_fd, int client_fd, uint32_t events) {
+    struct epoll_event event;
+    memset(&event, 0, sizeof(event));
+    event.events = events;
+    event.data.fd = client_fd;
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, client_fd, &event) < 0) {
+        std::cerr << "Error: epoll_ctl(EPOLL_CTL_MOD) failed." << std::endl;
+        close(client_fd);
+    }
+}
+
 int Server::accept_new_client(int fd)
 {
 	int err;
@@ -96,8 +107,8 @@ int Server::accept_new_client(int fd)
 			this->clients[i].my_index = i;
 
 			this->client_map[client_fd] = this->clients[i].my_index + 1u;
-		
-			epoll_add_new(this->_epoll_fd, client_fd, EPOLLIN | EPOLLPRI);
+
+			epoll_add_new(this->_epoll_fd, client_fd, EPOLLIN);
 			std::cout << "Client " << src_ip << ":" << src_port << " has been accepted!" << std::endl;
 			return (0);
 		}
@@ -126,34 +137,107 @@ void Server::handle_client_event(int client_fd, uint32_t revents)
 		return ;
 	}
 
-	recv_ret = recv(client_fd, buffer, sizeof(buffer), 0);
-	if (recv_ret == 0)
+	if (revents & EPOLLIN)
 	{
-		std::cerr << "Client " << this->clients[index].src_ip << ":" << this->clients[index].src_port << " has closed its connection." << std::endl;
-		if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) < 0)
-			std::cerr << "epoll_ctl(EPOLL_CTL_DEL) failed." << std::endl;
-		close(client_fd);
-		this->clients[index].is_used = false;
-		return ;
-	}
-	if (recv_ret < 0)
-	{
-		err = errno;
-		if (err == EAGAIN)
+		recv_ret = recv(client_fd, buffer, sizeof(buffer), 0);
+		if (recv_ret == 0)
+		{
+			std::cerr << "Client " << this->clients[index].src_ip << ":" << this->clients[index].src_port << " has closed its connection." << std::endl;
+			if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) < 0)
+				std::cerr << "epoll_ctl(EPOLL_CTL_DEL) failed." << std::endl;
+			close(client_fd);
+			this->clients[index].is_used = false;
 			return ;
-		std::cerr << "recv() failed." << std::endl;
-		std::cerr << "Client " << this->clients[index].src_ip << ":" << this->clients[index].src_port << " has closed its connection." << std::endl;
-		if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) < 0)
-			std::cerr << "epoll_ctl(EPOLL_CTL_DEL) failed." << std::endl;
-		close(client_fd);
-		this->clients[index].is_used = false;
-		return ;
-	}
+		}
+		if (recv_ret < 0)
+		{
+			err = errno;
+			if (err == EAGAIN)
+				return ;
+			std::cerr << "recv() failed." << std::endl;
+			std::cerr << "Client " << this->clients[index].src_ip << ":" << this->clients[index].src_port << " has closed its connection." << std::endl;
+			if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) < 0)
+				std::cerr << "epoll_ctl(EPOLL_CTL_DEL) failed." << std::endl;
+			close(client_fd);
+			this->clients[index].is_used = false;
+			return ;
+		}
 
-	buffer[recv_ret] = '\0';
-	if (buffer[recv_ret - 1] == '\n')
-		buffer[recv_ret - 1] = '\0';
-	std::cout << "Client " << this->clients[index].src_ip << ":" << this->clients[index].src_port << " sends: " << buffer << std::endl;
+		buffer[recv_ret] = '\0';
+		// if (buffer[recv_ret - 1] == '\n')
+		// 	buffer[recv_ret - 1] = '\0';
+
+		// std::string message = buffer;
+
+		char *token = std::strtok(buffer, "\n");
+		std::vector<std::string> tokens;
+		while (token != NULL)
+		{
+			// std::cout << "KEK: " << token << std::endl;
+			tokens.push_back(token);
+			token = std::strtok(NULL, "\n");
+		}
+
+		std::cout << "Client " << this->clients[index].src_ip << ":" << this->clients[index].src_port << " sends: " << buffer << std::endl;
+		const std::string response = "001 magnus :Welcome to the Internet Relay Network magnus\n";
+        this->clients[index].send_buffer += response;
+        epoll_mod(this->_epoll_fd, client_fd, EPOLLIN | EPOLLOUT);
+	}
+	if (revents & EPOLLOUT)
+	{
+        std::string& send_buffer = this->clients[index].send_buffer;
+        if (!send_buffer.empty()) {
+            ssize_t sent = send(client_fd, send_buffer.c_str(), send_buffer.size(), 0);
+            if (sent < 0) {
+                if (errno == EAGAIN)
+                    return;
+                std::cerr << "Error: send() failed." << std::endl;
+                close(client_fd);
+                this->clients[index].is_used = false;
+                epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+                return;
+            }
+            send_buffer.erase(0, sent);
+            if (send_buffer.empty()) {
+                epoll_mod(this->_epoll_fd, client_fd, EPOLLIN);
+            }
+        }
+    }
+	// char *token = std::strtok(buffer, "\n");
+	// const std::string response = "001 magnus :Welcome to the Internet Relay Network magnus";
+	// const std::string response = "CAP * LS :draft/example-1 draft/example-2";
+	// std::vector<std::string> tokens;
+	// while (token != NULL)
+	// {
+	// 	std::cout << "KEK: " << token << std::endl;
+	// 	tokens.push_back(token);
+	// 	token = std::strtok(NULL, "\n");
+	// }
+	// for (size_t i = 0; i < tokens.size(); i++)
+	// {
+	// 	char *cmd = std::strtok(&(tokens[i])[0], " ");
+	// 	while (cmd)
+	// 	{
+	// 		if (cmd[0] == 'C' && cmd[1] == 'A' && cmd[2] == 'P')
+	// 		{
+				// if (send(client_fd, response.c_str(), response.length(), 0) < 0)
+				// {
+				// 	err = errno;
+				// 	if (err == EAGAIN)
+				// 		return ;
+				// 	std::cerr << "send() failed." << std::endl;
+				// 	std::cerr << "Client " << this->clients[index].src_ip << ":" << this->clients[index].src_port << " has closed its connection." << std::endl;
+				// 	if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) < 0)
+				// 		std::cerr << "epoll_ctl(EPOLL_CTL_DEL) failed." << std::endl;
+				// 	close(client_fd);
+				// 	this->clients[index].is_used = false;
+				// 	return ;
+				// }
+				// std::cout << "Server sends: " << response << " to " << this->clients[index].src_ip << ":" << this->clients[index].src_port << std::endl;
+	// 		}
+	// 		cmd = std::strtok(NULL, " ");
+	// 	}
+	// }
 	return ;
 }
 
@@ -179,7 +263,7 @@ void Server::run()
 
 	std::cout << "Server running." << std::endl;
 	
-	epoll_add_new(this->_epoll_fd, this->_sock_fd, EPOLLIN | EPOLLPRI);
+	epoll_add_new(this->_epoll_fd, this->_sock_fd, EPOLLIN);
 
 	std::cout << "Server listening on port " << this->_port << "." << std::endl;
 
