@@ -118,6 +118,133 @@ int Server::accept_new_client(int fd)
 	return (0);
 }
 
+std::string Server::pass_cmd(std::vector<std::string> params, Client *client)
+{
+	params[1].erase(params[1].size() - 1);
+	if (params.size() == 1 || params[1].empty())
+		return ("ERROR : <PASS> :Not enough parameters\n");
+	if (params[1] != this->_password)
+		return ("ERROR :Password incorrect\n");
+	if (client->registered)
+		return ("ERROR :You may not reregister\n");
+	return ("");
+}
+
+bool Server::is_valid_nick(const std::string& nick)
+{
+	if (std::isdigit(nick[0]))
+		return (false);
+	for (std::string::const_iterator it = nick.begin(); it < nick.end(); it++)
+	{
+		if (!std::isalnum(*it) && *it != '[' && *it != ']' && *it != '{' && *it != '}'
+			&& *it != '\\' && *it != '|')
+			return (false);
+	}
+	return (true);
+}
+
+bool Server::nick_exist(const std::string& nick)
+{
+	for (int i = 0; i < MAX_NB_CLIENT; i++)
+	{
+		if (this->clients[i].nick == nick)
+			return (true);
+	}
+	return (false);
+}
+
+std::string Server::nick_cmd(std::vector<std::string> params, Client *client)
+{
+	std::string msg;
+	params[1].erase(params[1].size() - 1);
+	if (params.size() == 1 || params[1].empty())
+		return ("ERROR :No nickname given\n");
+	if (!is_valid_nick(params[1]))
+		return ("ERROR :Erroneus nickname\n");
+	if (nick_exist(params[1]))
+		return ("ERROR :Nickname is already in use\n");
+	if (client->registered)
+	{
+		msg = client->nick + " changed his nickname to " + params[1] + "\n";
+		client->nick = params[1];
+		return (msg);
+	}
+	client->nick = params[1];
+	return ("\n");
+}
+
+std::string Server::user_cmd(std::vector<std::string> params, Client *client)
+{
+	std::string msg;
+	params[1].erase(params[1].size() - 1);
+	if (params.size() == 1 || params[1].empty())
+		return ("ERROR : <USER> :Not enough parameters\n");
+	if (client->registered)
+		return ("ERROR :You may not reregister\n");
+	client->user = params[1];
+	client->user = params[3] + params[4];
+	msg = "001 ";
+	msg += client->nick;
+	msg += " :Welcome to the KEK Network ";
+	msg += client->nick;
+	msg += "\n";
+	msg += "002 ";
+	msg += client->nick;
+	msg += " :Your host is KEKservername, running version 3.0\n";
+	msg += "003 ";
+	msg += client->nick;
+	msg += " :This server was created today\n";
+	return (msg);
+}
+
+void Server::parse_cmd(char *buffer, int client_fd, uint32_t index)
+{
+	std::string response;
+	(void)client_fd;
+	std::cout << "buffer: " << buffer << std::endl;
+	char *cmd = std::strtok(buffer, "\n");
+	std::vector<std::string> cmds;
+	std::vector<std::vector<std::string> > tokens;
+	while (cmd != NULL)
+	{
+		cmds.push_back(cmd);
+		cmd = std::strtok(NULL, "\n");
+	}
+
+	for (std::vector<std::string>::iterator it = cmds.begin(); it < cmds.end() ;it++)
+	{
+		std::cout << "Command: " << *it << " " << std::endl;
+		char *token = std::strtok(&(*it)[0], " ");
+		std::vector<std::string> tmp;
+		while (token != NULL)
+		{
+			std::cout << "\ttoken: " << token << std::endl;
+			tmp.push_back(token);
+			token = std::strtok(NULL, " ");
+		}
+		tokens.push_back(tmp);
+	}
+
+	for (std::vector<std::vector<std::string> >::iterator it = tokens.begin();it < tokens.end();it++)
+	{
+		if ((*it)[0] == "CAP")
+			continue ;
+		if ((*it)[0] == "PASS")
+			response = pass_cmd(*it, &this->clients[index]);
+		if ((*it)[0] == "NICK")
+			response = nick_cmd(*it, &this->clients[index]);
+		if ((*it)[0] == "USER")
+			response = user_cmd(*it, &this->clients[index]);
+		// if ((*it)[0] == "JOIN")
+		// 	join_cmd();
+		if ((*it)[0] == "PING")
+			ping_cmd(*it, &this->clients[index]);
+	}
+
+	std::cout << "Client " << this->clients[index].src_ip << ":" << this->clients[index].src_port << " sends: " << buffer << std::endl;
+	this->clients[index].send_buffer += response;
+}
+
 void Server::handle_client_event(int client_fd, uint32_t revents)
 {
 	int err;
@@ -169,22 +296,12 @@ void Server::handle_client_event(int client_fd, uint32_t revents)
 
 		// std::string message = buffer;
 
-		char *token = std::strtok(buffer, "\n");
-		std::vector<std::string> tokens;
-		while (token != NULL)
-		{
-			// std::cout << "KEK: " << token << std::endl;
-			tokens.push_back(token);
-			token = std::strtok(NULL, "\n");
-		}
-
-		std::cout << "Client " << this->clients[index].src_ip << ":" << this->clients[index].src_port << " sends: " << buffer << std::endl;
-		const std::string response = "001 magnus :Welcome to the Internet Relay Network magnus\n";
-        this->clients[index].send_buffer += response;
+		parse_cmd(buffer, client_fd, index);
         epoll_mod(this->_epoll_fd, client_fd, EPOLLIN | EPOLLOUT);
 	}
 	if (revents & EPOLLOUT)
 	{
+		// std::cout << "OIIIII: " << this->clients[index].send_buffer << std::endl;
         std::string& send_buffer = this->clients[index].send_buffer;
         if (!send_buffer.empty()) {
             ssize_t sent = send(client_fd, send_buffer.c_str(), send_buffer.size(), 0);
