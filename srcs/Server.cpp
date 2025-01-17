@@ -60,7 +60,7 @@ void Server::epoll_add_new(int epoll_fd, int serv_fd, uint32_t events)
 		std::cerr << "Error: epoll_ctl(EPOLL_CTL_ADD) failed." << std::endl;
 		close(serv_fd);
 		this->_sock_fd = -1;
-		// Server::stop();
+		Server::stop();
 	}
 }
 
@@ -168,7 +168,6 @@ bool Server::nick_exist(const std::string& nick)
 {
 	for (int i = 0; i < MAX_NB_CLIENT; i++)
 	{
-		// std::cout << "nick: " << this->clients[i].nick << " nick2: " << nick << std::endl;
 		if (this->clients[i].nick == nick)
 			return (true);
 	}
@@ -270,13 +269,19 @@ bool Server::ping_cmd(std::vector<std::string> params, Client *client)
 	msg = "PONG KEKserver ";
 	msg += params[1];
 	msg += "\n";
-	// std::cout << "Ping reply: " << msg << std::endl;
 	return (client->send_buffer += msg, true);
 }
 
+// bool Server::quit_cmd(std::vector<std::string> params, Client *client)
+// {
+// 	params[1].erase(params[1].size() - 1);
+// 	client->quit = true;
+// 	return (client->send_buffer += "ERROR :Connection timeout\n", true);
+// }
+
 void Server::parse_cmd(char *buffer, int client_fd, uint32_t index)
 {
-	std::string response;
+	std::cout << "Client " << this->clients[index].src_ip << ":" << this->clients[index].src_port << " sends: " << buffer << std::endl;
 	(void)client_fd;
 	// std::cout << "buffer: " << buffer << std::endl;
 	char *cmd = std::strtok(buffer, "\n");
@@ -304,8 +309,8 @@ void Server::parse_cmd(char *buffer, int client_fd, uint32_t index)
 
 	for (std::vector<std::vector<std::string> >::iterator it = tokens.begin();it < tokens.end();it++)
 	{
-		if ((*it)[0] == "CAP")
-			continue ;
+		// if ((*it)[0] == "CAP")
+		// 	continue ;
 		if ((*it)[0] == "PASS" && !pass_cmd(*it, &this->clients[index]))
 			break ;
 		if ((*it)[0] == "NICK" && !nick_cmd(*it, &this->clients[index]))
@@ -314,6 +319,8 @@ void Server::parse_cmd(char *buffer, int client_fd, uint32_t index)
 			break ;
 		if ((*it)[0] == "OPER" && !oper_cmd(*it, &this->clients[index]))
 			break ;
+		// if ((*it)[0] == "QUIT" && quit_cmd(*it, &this->clients[index]))
+		// 	break ;
 		// if ((*it)[0] == "JOIN")
 		// 	join_cmd();
 		if ((*it)[0] == "PING" && !ping_cmd(*it, &this->clients[index]))
@@ -321,8 +328,6 @@ void Server::parse_cmd(char *buffer, int client_fd, uint32_t index)
 		// if ((*it)[0] == "WHOIS" && whois_cmd(*it, &this->clients[index]))
 		// 	break ;
 	}
-
-	std::cout << "Client " << this->clients[index].src_ip << ":" << this->clients[index].src_port << " sends: " << buffer << std::endl;
 }
 
 void Server::handle_client_event(int client_fd, uint32_t revents)
@@ -344,7 +349,6 @@ void Server::handle_client_event(int client_fd, uint32_t revents)
 		this->clients[index].is_used = false;
 		return ;
 	}
-
 	if (revents & EPOLLIN)
 	{
 		recv_ret = recv(client_fd, buffer, sizeof(buffer), 0);
@@ -376,15 +380,11 @@ void Server::handle_client_event(int client_fd, uint32_t revents)
 		buffer[recv_ret] = '\0';
 		// if (buffer[recv_ret - 1] == '\n')
 		// 	buffer[recv_ret - 1] = '\0';
-
-		// std::string message = buffer;
-
 		parse_cmd(buffer, client_fd, index);
         epoll_mod(this->_epoll_fd, client_fd, EPOLLIN | EPOLLOUT, index);
 	}
 	if (revents & EPOLLOUT)
 	{
-		// std::cout << "OIIIII: " << this->clients[index].send_buffer << std::endl;
         std::string& send_buffer = this->clients[index].send_buffer;
         if (!send_buffer.empty()) {
 			std::cout << "Server: sending\n" << send_buffer << std::endl;
@@ -403,49 +403,28 @@ void Server::handle_client_event(int client_fd, uint32_t revents)
             if (send_buffer.empty()) {
                 epoll_mod(this->_epoll_fd, client_fd, EPOLLIN, index);
             }
+			// if (this->clients[index].quit)
+			// {
+            //     close(client_fd);
+			// 	this->clients[index].client_fd = -1;
+            //     this->clients[index].is_used = false;
+			// 	this->clients[index].quit = false;
+			// 	this->clients[index].src_ip.clear();
+			// 	this->clients[index].src_port = 0;
+			// 	this->clients[index].send_buffer.clear();
+			// 	this->clients[index].registered = false;
+			// 	this->clients[index].authenticated = false;
+			// 	this->clients[index].is_operator = false;
+			// 	this->clients[index].nick.clear();
+			// 	this->clients[index].realname.clear();
+			// 	// epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+			// }
         }
     }
-	// char *token = std::strtok(buffer, "\n");
-	// const std::string response = "001 magnus :Welcome to the Internet Relay Network magnus";
-	// const std::string response = "CAP * LS :draft/example-1 draft/example-2";
-	// std::vector<std::string> tokens;
-	// while (token != NULL)
-	// {
-	// 	std::cout << "KEK: " << token << std::endl;
-	// 	tokens.push_back(token);
-	// 	token = std::strtok(NULL, "\n");
-	// }
-	// for (size_t i = 0; i < tokens.size(); i++)
-	// {
-	// 	char *cmd = std::strtok(&(tokens[i])[0], " ");
-	// 	while (cmd)
-	// 	{
-	// 		if (cmd[0] == 'C' && cmd[1] == 'A' && cmd[2] == 'P')
-	// 		{
-				// if (send(client_fd, response.c_str(), response.length(), 0) < 0)
-				// {
-				// 	err = errno;
-				// 	if (err == EAGAIN)
-				// 		return ;
-				// 	std::cerr << "send() failed." << std::endl;
-				// 	std::cerr << "Client " << this->clients[index].src_ip << ":" << this->clients[index].src_port << " has closed its connection." << std::endl;
-				// 	if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) < 0)
-				// 		std::cerr << "epoll_ctl(EPOLL_CTL_DEL) failed." << std::endl;
-				// 	close(client_fd);
-				// 	this->clients[index].is_used = false;
-				// 	return ;
-				// }
-				// std::cout << "Server sends: " << response << " to " << this->clients[index].src_ip << ":" << this->clients[index].src_port << std::endl;
-	// 		}
-	// 		cmd = std::strtok(NULL, " ");
-	// 	}
-	// }
-	return ;
 }
 
 void Server::run()
 {
-	// socklen_t client_len;
 	memset(&this->_serverAddr, 0, sizeof(this->_serverAddr));
 	this->_serverAddr.sin_family = AF_INET;
 	this->_serverAddr.sin_addr.s_addr = INADDR_ANY;
@@ -507,26 +486,6 @@ void Server::run()
 			handle_client_event(fd, events[i].events);
 		}
 	}
-
-	// client_len = sizeof(this->_clientAddr);
-	// this->_client_sock_fd = accept(this->_sock_fd, (struct sockaddr *)&this->_clientAddr, &client_len);
-	// if (this->_client_sock_fd < 0)
-	// {
-	// 	std::cerr << "Error: accept failed." << std::endl;
-	// 	close(this->_sock_fd);
-	// 	exit(1);
-	// }
-	// char buffer[1024] = {0};
-
-	// if (recv(this->_client_sock_fd, buffer, sizeof(buffer), 0) < 0)
-	// {
-	// 	std::cerr << "Error: reading from socket failed." << std::endl;
-	// 	close(this->_sock_fd);
-	// 	exit(1);
-	// }
-
-	// std::cout << "Message from client: " << buffer << std::endl;
-	// close(this->_sock_fd);
 }
 
 void Server::stop()

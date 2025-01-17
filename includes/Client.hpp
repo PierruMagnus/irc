@@ -21,6 +21,7 @@ class Client
 		bool authenticated;
 		bool send_to_all;
 		bool is_operator;
+		bool quit;
 		std::string nick;
 		std::string user;
 		std::string realname;

@@ -1,7 +1,7 @@
 #include "../includes/Client.hpp"
 
 Client::Client(): is_used(false), registered(false), authenticated(false), send_to_all(false),
-				  is_operator(false), nick(""), user("")
+				  is_operator(false), quit(false), nick(""), user("")
 {}
 
 Client::~Client()

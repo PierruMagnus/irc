@@ -6,7 +6,7 @@
 /*   By: pmagnero <pmagnero@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/10 10:01:22 by pmagnero          #+#    #+#             */
-/*   Updated: 2025/01/17 13:26:07 by pmagnero         ###   ########.fr       */
+/*   Updated: 2025/01/17 15:54:46 by pmagnero         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,6 +65,7 @@ class Server
 		bool user_cmd(std::vector<std::string> params, Client *client);
 		bool ping_cmd(std::vector<std::string> params, Client *client);
 		bool oper_cmd(std::vector<std::string> params, Client *client);
+		// bool quit_cmd(std::vector<std::string> params, Client *client);
 		bool join_cmd(std::vector<std::string> params, Client *client);
 
 		bool is_valid_nick(const std::string& nick);
