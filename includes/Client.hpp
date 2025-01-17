@@ -18,6 +18,9 @@ class Client
 		uint16_t my_index;
 		std::string send_buffer;
 		bool registered;
+		bool authenticated;
+		bool send_to_all;
+		bool is_operator;
 		std::string nick;
 		std::string user;
 		std::string realname;

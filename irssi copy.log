@@ -1,0 +1,81 @@
+--- Log opened Fri Jan 17 09:42:06 2025
+09:42 -!- Irssi: Log file /home/pmagnero/repo/irc/irc/irssi.log opened
+09:43 -!- Irssi: Connecting to ircs://irc.oftc.net:6697 [] port 6667
+09:43 -!- Irssi: Unable to connect server ircs://irc.oftc.net:6697 port 6667 [No such file or directory]
+09:43 -!- Irssi: Looking up irc.oftc.net
+09:43 -!- Irssi: Connecting to irc.oftc.net [188.240.145.40] port 6697
+09:43 -!- Irssi: Certificate Chain:
+09:43 -!- Irssi:   Subject: CN: liquid.oftc.net
+09:43 -!- Irssi:   Issuer:  C: US, O: Let's Encrypt, CN: R11
+09:43 -!- Irssi:   Subject: C: US, O: Let's Encrypt, CN: R11
+09:43 -!- Irssi:   Issuer:  C: US, O: Internet Security Research Group, CN: ISRG Root X1
+09:43 -!- Irssi: Protocol: TLSv1.3 (256 bit, TLS_AES_256_GCM_SHA384)
+09:43 -!- Irssi: EDH Key: 256 bit ECDH: prime256v1
+09:43 -!- Irssi: Public Key: 2048 bit RSA, valid from Jan  2 15:39:11 2025 GMT to Apr  2 15:39:10 2025 GMT
+09:43 -!- Irssi: Public Key Fingerprint:  03:56:4D:8B:FB:1F:96:B2:0C:B9:F1:C9:88:25:B2:5C:DC:3F:3C:C8:99:AD:91:8A:9F:07:02:74:54:68:38:54 (SHA256)
+09:43 -!- Irssi: Certificate Fingerprint: 00:0D:EE:F4:EF:FB:BD:11:B5:38:6F:49:6D:6F:16:F0:AA:BF:00:2F:47:77:4D:16:B3:90:14:62:76:80:21:A5 (SHA256)
+09:43 -!- Irssi: Connection to irc.oftc.net established
+09:43 !liquid.oftc.net *** Looking up your hostname...
+09:43 !liquid.oftc.net *** Checking Ident
+09:43 !liquid.oftc.net *** Couldn't look up your hostname
+09:43 !liquid.oftc.net *** No Ident response
+09:43 -!- Capabilities requested: multi-prefix
+09:43 -!- Capabilities supported: multi-prefix
+09:43 -!- Capabilities acknowledged: multi-prefix
+09:43 !liquid.oftc.net *** Connected securely via TLSv1.3 TLS_AES_256_GCM_SHA384-256
+09:43 -!- Welcome to the OFTC Internet Relay Chat Network pmagnero
+09:43 -!- Your host is liquid.oftc.net[188.240.145.40/6697], running version hybrid-7.2.2+oftc1.7.3
+09:43 -!- This server was created Nov  1 2023 at 10:11:37
+09:43 -!- liquid.oftc.net hybrid-7.2.2+oftc1.7.3 CDGPRSabcdfgijklnorsuwxyz bciklmnopstvzeIMRS bkloveI
+09:43 -!- CALLERID CASEMAPPING=rfc1459 DEAF=D KICKLEN=160 MODES=4 NICKLEN=30 PREFIX=(ov)@+ STATUSMSG=@+ TOPICLEN=391 NETWORK=OFTC MAXLIST=beI:100 MAXTARGETS=1 CHANTYPES=# are supported by this server
+09:43 -!- CHANLIMIT=#:250 CHANNELLEN=50 CHANMODES=eIqb,k,l,cimnpstzMRS ELIST=CMNTU SAFELIST AWAYLEN=160 KNOCK EXCEPTS=e INVEX=I are supported by this server
+09:43 -!- 7YZAADSFI your unique ID
+09:43 -!- There are 27 users and 17309 invisible on 19 servers
+09:43 -!- 21 IRC Operators online
+09:43 -!- 4103 channels formed
+09:43 -!- I have 3494 clients and 1 servers
+09:43 -!- Current local users: 3494  Max: 3710
+09:43 -!- Current global users: 17336  Max: 17454
+09:43 -!- Highest connection count: 3711 (3710 clients) (163485 connections received)
+09:43 -!- - liquid.oftc.net Message of the Day - 
+09:43 -!- -   O
+09:43 -!- -    \   The Open and Free
+09:43 -!- -     O  Technology Community
+09:43 -!- -    /|  https://www.oftc.net
+09:43 -!- - O-O O
+09:43 -!- - 
+09:43 -!- - Welcome to the OFTC IRC Network.
+09:43 -!- - 
+09:43 -!- - The Open and Free Technology Community was founded at the
+09:43 -!- - end of 2001 by a group of experienced members of the Open
+09:43 -!- - Source and Free Software communities; it is aimed at
+09:43 -!- - providing these communities with better communication,
+09:43 -!- - development, and support infrastructure. Our goal is to
+09:43 -!- - provide stable services to members of the community in any
+09:43 -!- - part of the world, while listening closely to their needs
+09:43 -!- - and desires.
+09:43 -!- - 
+09:43 -!- - We are not a general purpose chat platform, but a topical
+09:43 -!- - network intent on providing the open source and free
+09:43 -!- - software communities a means to cooperate and communicate.
+09:43 -!- - As such, illegal and off-topic activity, such as warez
+09:43 -!- - trading, will result in being barred from access.
+09:43 -!- - 
+09:43 -!- - OFTC honors your privacy. To operate the network, we store
+09:43 -!- - and process information about IRC connections, nicknames,
+09:43 -!- - and channels. Our Privacy Policy explains what we do with
+09:43 -!- - that data, and what your rights are. By connecting, you
+09:43 -!- - accept these terms: https://www.oftc.net/Privacy_Policy/
+09:43 -!- - 
+09:43 -!- - If you require assistance with using the OFTC IRC network,
+09:43 -!- - stop by in channel #oftc, or email support@oftc.net with
+09:43 -!- - details. For help with non-IRC questions please refer to
+09:43 -!- - the respective channels and project homepages.
+09:43 -!- - 
+09:43 -!- - Thanks and enjoy your stay! The OFTC team.
+09:43 -!- End of /MOTD command.
+09:43 -!- Mode change [+i] for user pmagnero
+09:43 CTCPServ [services@services.oftc.net] requested CTCP VERSION from pmagnero: 
+09:44 -!- Irssi: Unknown command: log help
+09:45 -!- Irssi: Disconnecting from server irc.oftc.net: [leaving]
+09:45 -!- Irssi: Connection lost to irc.oftc.net

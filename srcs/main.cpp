@@ -6,11 +6,13 @@
 /*   By: pmagnero <pmagnero@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/10 09:54:30 by pmagnero          #+#    #+#             */
-/*   Updated: 2025/01/10 11:08:30 by pmagnero         ###   ########.fr       */
+/*   Updated: 2025/01/17 13:11:43 by pmagnero         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Server.hpp"
+
+Server* instance = NULL;
 
 int checkPort(const std::string& port_s)
 {
@@ -82,14 +84,35 @@ unsigned int checkArgs(int ac, char **av)
 	return (port);
 }
 
+void sig_handler(int i)
+{
+	(void)i;
+	if (instance)
+	{
+		instance->stop();
+		instance = NULL;
+	}
+	exit(0);
+}
+
 int main(int ac, char **av)
 {
 	unsigned int port;
 
 	port = checkArgs(ac, av);
 
+	struct sigaction sigInthandler;
+
+	sigInthandler.sa_handler = sig_handler;
+   	sigemptyset(&sigInthandler.sa_mask);
+   	sigInthandler.sa_flags = 0;
+
+	sigaction(SIGINT, &sigInthandler, NULL);
+
 	Server server(port, av[2]);
 	
+	instance = &server;
+
 	server.run();
 	
 	return (0);
