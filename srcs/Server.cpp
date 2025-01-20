@@ -122,11 +122,13 @@ int Server::accept_new_client(int fd)
 			this->client_map[client_fd] = this->clients[i].my_index + 1u;
 
 			epoll_add_new(this->_epoll_fd, client_fd, EPOLLIN);
-			std::cout << "Client " << src_ip << ":" << src_port << " has been accepted!" << std::endl;
+			debug("has been accepted", &this->clients[i], 0);
+			// std::cout << getTime() << "Client " << src_ip << ":" << src_port << " has been accepted!" << std::endl;
 			return (0);
 		}
 	}
-	std::cout << "Slot is full, can't accept any more client at the moment." << std::endl;
+	debug("Slot is full, can't accept any more client at the moment.", NULL, 0);
+	// std::cout << getTime() << "Slot is full, can't accept any more client at the moment." << std::endl;
 	close(client_fd);
 	return (0);
 }
@@ -148,6 +150,7 @@ bool Server::pass_cmd(std::vector<std::string> params, Client *client)
 				client->send_buffer += " :You may not reregister\n", false);
 	client->authenticated = true;
 	client->send_buffer += "\n";
+	client->sendto.insert(client);
 	return (true);
 }
 
@@ -164,14 +167,14 @@ bool Server::is_valid_nick(const std::string& nick)
 	return (true);
 }
 
-bool Server::nick_exist(const std::string& nick)
+Client *Server::nick_exist(const std::string& nick)
 {
 	for (int i = 0; i < MAX_NB_CLIENT; i++)
 	{
 		if (this->clients[i].nick == nick)
-			return (true);
+			return (&this->clients[i]);
 	}
-	return (false);
+	return (NULL);
 }
 
 bool Server::nick_cmd(std::vector<std::string> params, Client *client)
@@ -192,7 +195,8 @@ bool Server::nick_cmd(std::vector<std::string> params, Client *client)
 				client->send_buffer += " :Nickname is already in use\n", false);
 	if (client->registered)
 	{
-		std::cout << "Changing nickname" << std::endl;
+		debug("Changing nickname.", client, 0);
+		// std::cout << getTime() << "Changing nickname" << std::endl;
 		msg = ":";
 		msg += client->nick;
 		msg += " NICK ";
@@ -202,10 +206,10 @@ bool Server::nick_cmd(std::vector<std::string> params, Client *client)
 		return (client->send_buffer += msg, false);
 	}
 	client->nick = params[1];
+	client->sendto.insert(client);
 	return (client->send_buffer += "\n", true);
 }
 
-//TODO: Add Datetime of creation of the server
 //TODO: Add better message
 bool Server::user_cmd(std::vector<std::string> params, Client *client)
 {
@@ -237,8 +241,11 @@ bool Server::user_cmd(std::vector<std::string> params, Client *client)
 	msg += " :Your host is KEKservername, running version 3.0\n";
 	msg += "003 ";
 	msg += client->nick;
-	msg += " :This server was created today\n";
+	msg += " :This server was created ";
+	msg += getTime();
+	msg += "\n";
 	client->registered = true;
+	client->sendto.insert(client);
 	return (client->send_buffer += msg, true);
 }
 
@@ -258,6 +265,7 @@ bool Server::oper_cmd(std::vector<std::string> params, Client *client)
 	client->send_buffer += "381 : ";
 	client->send_buffer += client->nick;
 	client->send_buffer += " :You are now an IRC operator\n";
+	client->sendto.insert(client);
 	return (true);
 }
 
@@ -269,8 +277,53 @@ bool Server::ping_cmd(std::vector<std::string> params, Client *client)
 	msg = "PONG KEKserver ";
 	msg += params[1];
 	msg += "\n";
+	client->sendto.insert(client);
 	return (client->send_buffer += msg, true);
 }
+
+bool Server::privmsg_cmd(std::vector<std::string> params, Client *client)
+{
+	if (params.size() < 3 || params[1].empty() || params[2].empty())
+		return (client->send_buffer += "461 : ",
+			client->send_buffer += client->nick,
+			client->send_buffer += "<PRIVMSG> :Not enough parameters\n", false);
+	char *rec = std::strtok(&params[1][0], ",");
+	std::vector<std::string> recipients;
+	while (rec != NULL)
+	{
+		recipients.push_back(rec);
+		rec = std::strtok(NULL, ",");
+	}
+	for (std::vector<std::string>::iterator it = recipients.begin(); it != recipients.end();it++)
+	{
+		(*it).erase((*it).find_last_not_of(' ') + 1);
+		(*it).erase(0, (*it).find_first_not_of(' '));
+		std::cout << "debug: nick: " << (*it) << std::endl;
+		Client *c = nick_exist((*it));
+		if (!c)
+			return (client->sendto.insert(c),
+					client->send_buffer += "401 : ",
+					client->send_buffer += client->nick,
+					client->send_buffer += " ",
+					client->send_buffer += (*it),
+					client->send_buffer += " :No such nick/channel\n", false);
+	}
+	client->send_buffer += ":";
+	client->send_buffer += client->nick;
+	client->send_buffer += " PRIVMSG ";
+	client->send_buffer += recipients[0];
+	client->send_buffer += " ";
+	for (std::vector<std::string>::iterator it = params.begin() + 2;it != params.end();it++)
+	{
+		client->send_buffer += (*it).c_str();
+		if (it < params.end() - 1)
+			client->send_buffer += " ";
+	}
+	client->send_buffer += "\n";
+	std::cout << "debug: privmsg: " << client->send_buffer << std::endl;
+	return (true);
+}
+
 
 // bool Server::quit_cmd(std::vector<std::string> params, Client *client)
 // {
@@ -281,7 +334,7 @@ bool Server::ping_cmd(std::vector<std::string> params, Client *client)
 
 void Server::parse_cmd(char *buffer, int client_fd, uint32_t index)
 {
-	std::cout << "Client " << this->clients[index].src_ip << ":" << this->clients[index].src_port << " sends: " << buffer << std::endl;
+	// std::cout << "Client " << this->clients[index].src_ip << ":" << this->clients[index].src_port << " sends: " << buffer << std::endl;
 	(void)client_fd;
 	// std::cout << "buffer: " << buffer << std::endl;
 	char *cmd = std::strtok(buffer, "\n");
@@ -321,6 +374,8 @@ void Server::parse_cmd(char *buffer, int client_fd, uint32_t index)
 			break ;
 		// if ((*it)[0] == "QUIT" && quit_cmd(*it, &this->clients[index]))
 		// 	break ;
+		if ((*it)[0] == "PRIVMSG" && privmsg_cmd(*it, &this->clients[index]))
+			break ;
 		// if ((*it)[0] == "JOIN")
 		// 	join_cmd();
 		if ((*it)[0] == "PING" && !ping_cmd(*it, &this->clients[index]))
@@ -378,6 +433,8 @@ void Server::handle_client_event(int client_fd, uint32_t revents)
 		}
 
 		buffer[recv_ret] = '\0';
+		debug(buffer, &this->clients[index], 0);
+		// std::cout << getTime() << ": Client " << this->clients[index].src_ip << ":" << this->clients[index].src_port << " sends: " << buffer << std::endl;
 		// if (buffer[recv_ret - 1] == '\n')
 		// 	buffer[recv_ret - 1] = '\0';
 		parse_cmd(buffer, client_fd, index);
@@ -387,22 +444,28 @@ void Server::handle_client_event(int client_fd, uint32_t revents)
 	{
         std::string& send_buffer = this->clients[index].send_buffer;
         if (!send_buffer.empty()) {
-			std::cout << "Server: sending\n" << send_buffer << std::endl;
-            ssize_t sent = send(client_fd, send_buffer.c_str(), send_buffer.size(), 0);
-            if (sent < 0) {
-                if (errno == EAGAIN)
-                    return;
-                std::cerr << "Error: send() failed." << std::endl;
-                close(client_fd);
-				this->clients[index].client_fd = -1;
-                this->clients[index].is_used = false;
-                epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-                return;
-            }
-            send_buffer.erase(0, sent);
-            if (send_buffer.empty()) {
-                epoll_mod(this->_epoll_fd, client_fd, EPOLLIN, index);
-            }
+			// debug(send_buffer, &this->clients[index], 1);
+			// std::cout << "debug: vector: " << this->clients[index].sendto.size() << std::endl;
+			for (std::set<Client *>::iterator it = this->clients[index].sendto.begin();it != this->clients[index].sendto.end();it++)
+			{
+				ssize_t sent = send((*it)->client_fd, send_buffer.c_str(), send_buffer.size(), 0);
+				if (sent < 0) {
+					if (errno == EAGAIN)
+						return;
+					std::cerr << "Error: send() failed." << std::endl;
+					close(client_fd);
+					this->clients[index].client_fd = -1;
+					this->clients[index].is_used = false;
+					epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+					return;
+				}
+			}
+			// send_buffer.erase(0, sent);
+			send_buffer.clear();
+			this->clients[index].sendto.clear();
+			if (send_buffer.empty()) {
+				epoll_mod(this->_epoll_fd, client_fd, EPOLLIN, index);
+			}
 			// if (this->clients[index].quit)
 			// {
             //     close(client_fd);
@@ -421,6 +484,32 @@ void Server::handle_client_event(int client_fd, uint32_t revents)
 			// }
         }
     }
+}
+
+std::string Server::getTime() const
+{
+	time_t rawtime;
+	struct tm *timeinfo;
+	char buffer[80];
+	std::string res;
+
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+
+	strftime(buffer, 80, "[%F %T]: ", timeinfo);
+	res = buffer;
+	return (res);
+}
+
+void Server::debug(std::string msg, Client *from, bool to)
+{
+	msg.erase(msg.find_last_not_of('\n') + 1);
+	if (from && !to)
+		std::cout << "INFO: " << getTime() << from->src_ip << ":" << from->src_port << ": Send: " << msg << std::endl;
+	else if (to && from)
+		std::cout << "INFO: " << getTime() << "Server send" << msg << " to " << from->src_ip << ":" << from->src_port << std::endl;
+	if (!from)
+		std::cout << "INFO: " << getTime() << msg << std::endl;
 }
 
 void Server::run()
@@ -444,11 +533,13 @@ void Server::run()
 		Server::stop();
 	}
 
-	std::cout << "Server running." << std::endl;
+	debug("Server running.", NULL, 0);
+	// std::cout << getTime() << "Server running." << std::endl;
 	
 	epoll_add_new(this->_epoll_fd, this->_sock_fd, EPOLLIN);
 
-	std::cout << "Server listening on port " << this->_port << "." << std::endl;
+	// debug("Server listening on port " + std::to_string(this->_port), NULL, 0);
+	std::cout << "INFO: " << getTime() << "Server listening on port " << this->_port << "." << std::endl;
 
 	int epoll_ret;
 	int err;
@@ -490,6 +581,7 @@ void Server::run()
 
 void Server::stop()
 {
-	std::cout << "Server stopping" << std::endl;
+	debug("Server stopping", NULL, 0);
+	// std::cout << getTime() << "Server stopping" << std::endl;
 	Server::~Server();
 }

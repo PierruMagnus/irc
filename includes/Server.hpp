@@ -6,7 +6,7 @@
 /*   By: pmagnero <pmagnero@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/10 10:01:22 by pmagnero          #+#    #+#             */
-/*   Updated: 2025/01/17 15:54:46 by pmagnero         ###   ########.fr       */
+/*   Updated: 2025/01/20 12:10:28 by pmagnero         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,9 @@
 #include <cstring>
 #include <string>
 #include <signal.h>
+#include <ctime>
+#include <iomanip>
+#include <cstddef>
 
 #include <vector>
 #include <map>
@@ -67,7 +70,11 @@ class Server
 		bool oper_cmd(std::vector<std::string> params, Client *client);
 		// bool quit_cmd(std::vector<std::string> params, Client *client);
 		bool join_cmd(std::vector<std::string> params, Client *client);
+		bool privmsg_cmd(std::vector<std::string> params, Client *client);
 
 		bool is_valid_nick(const std::string& nick);
-		bool nick_exist(const std::string& nick);
+		Client *nick_exist(const std::string& nick);
+
+		std::string getTime() const;
+		void debug(std::string msg, Client *from, bool to);
 };

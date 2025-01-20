@@ -5,6 +5,8 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/epoll.h>
+#include <set>
+#include <algorithm>
 
 class Client
 {
@@ -25,4 +27,5 @@ class Client
 		std::string nick;
 		std::string user;
 		std::string realname;
+		std::set<Client *> sendto;
 };
