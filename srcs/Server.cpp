@@ -27,6 +27,14 @@ Server::Server(unsigned int port, const std::string& password): _port(port), _pa
 		Server::stop();
 	}
 	this->operators.insert(std::pair<std::string, std::string>("pmagnero", "adminpass"));
+
+	Channel *oi = new Channel("#OI");
+	Channel *channel1 = new Channel("#Channel1");
+	// oi.name = "#OI";
+	// channel1.name = "#Channel1";
+	this->channels.insert(oi);
+	this->channels.insert(channel1);
+
 	// if (setsockopt(this->_sock_fd, SOL_SOCKET, SO_REUSEADDR, (char *)1, sizeof(int)) < 0)
 	// {
 	// 	std::cerr << "Error: setsockopt() failed." << std::endl;
@@ -44,6 +52,16 @@ Server::~Server()
 		this->clients[i].~Client();
 	}
 	this->operators.clear();
+	for (std::set<Channel *>::iterator it = this->channels.begin();it != this->channels.end();it++)
+	{
+		// (*it)->name.clear();
+		// (*it)->topic.clear();
+		// (*it)->key.clear();
+		// (*it)->users.clear();
+		// (*it)->operators.clear();
+		delete *it;
+	}
+	this->channels.clear();
 	exit(0);
 }
 
@@ -177,6 +195,17 @@ Client *Server::nick_exist(const std::string& nick)
 	return (NULL);
 }
 
+Channel *Server::channel_exist(const std::string& channel)
+{
+	for (std::set<Channel *>::iterator it = this->channels.begin();it != this->channels.end();it++)
+	{
+		std::cout << "chanexist: " << (*it)->name << std::endl;
+		if ((*it)->name == channel)
+			return ((*it));
+	}
+	return (NULL);
+}
+
 bool Server::nick_cmd(std::vector<std::string> params, Client *client)
 {
 	std::string msg;
@@ -286,7 +315,7 @@ bool Server::privmsg_cmd(std::vector<std::string> params, Client *client)
 	if (params.size() < 3 || params[1].empty() || params[2].empty())
 		return (client->send_buffer += "461 : ",
 			client->send_buffer += client->nick,
-			client->send_buffer += "<PRIVMSG> :Not enough parameters\n", false);
+			client->send_buffer += " <PRIVMSG> :Not enough parameters\n", false);
 	char *rec = std::strtok(&params[1][0], ",");
 	std::vector<std::string> recipients;
 	while (rec != NULL)
@@ -301,7 +330,7 @@ bool Server::privmsg_cmd(std::vector<std::string> params, Client *client)
 		std::cout << "debug: nick: " << (*it) << std::endl;
 		Client *c = nick_exist((*it));
 		if (!c)
-			return (client->sendto.insert(c),
+			return (client->sendto.insert(client),
 					client->send_buffer += "401 : ",
 					client->send_buffer += client->nick,
 					client->send_buffer += " ",
@@ -321,6 +350,81 @@ bool Server::privmsg_cmd(std::vector<std::string> params, Client *client)
 	}
 	client->send_buffer += "\n";
 	std::cout << "debug: privmsg: " << client->send_buffer << std::endl;
+	return (true);
+}
+
+bool Server::join_cmd(std::vector<std::string> params, Client *client)
+{
+	std::cout << "debug: channel: " << std::endl;
+	if (params.size() < 2 || params[1].empty())
+		return (client->send_buffer += "461 : ",
+			client->send_buffer += client->nick,
+			client->send_buffer += " JOIN :Not enough parameters\n", false);
+	std::cout << "chan: " << params[1] << std::endl;
+	char *chan = std::strtok(&params[1][0], ",");
+	std::vector<std::string> channellist;
+	while (chan != NULL)
+	{
+		channellist.push_back(chan);
+		chan = std::strtok(NULL, ",");
+	}
+	std::cout << "chan: " << channellist[0] << std::endl;
+	std::vector<std::string> keylist;
+	if (params.size() == 3 && !params[2].empty())
+	{
+		char *chankey = std::strtok(&params[2][0], ",");
+		while (chankey != NULL)
+		{
+			keylist.push_back(chankey);
+			chankey = std::strtok(NULL, ",");
+		}
+	}
+	else
+		keylist.push_back("");
+	std::vector<std::string>::iterator kit = keylist.begin();
+	for (std::vector<std::string>::iterator it = channellist.begin(); it != channellist.end();it++)
+	{
+		(*it).erase((*it).find_last_not_of(' ') + 1);
+		(*it).erase(0, (*it).find_first_not_of(' '));
+		std::cout << "debug: channel: " << (*it) << std::endl;
+		Channel *c = channel_exist((*it));
+		if (!c)
+			return (client->sendto.insert(client),
+				client->send_buffer += "403 : ",
+				client->send_buffer += client->nick,
+				client->send_buffer += " ",
+				client->send_buffer += (*it),
+				client->send_buffer += " :No such channel\n", false);
+		if (c->users.size() == c->limit)
+			return (client->sendto.insert(client),
+				client->send_buffer += "471 : ",
+				client->send_buffer += client->nick,
+				client->send_buffer += " ",
+				client->send_buffer += c->name,
+				client->send_buffer += " :Cannot join channel (+l)\n", false);
+		if ((*kit) != c->key)
+			return (client->sendto.insert(client),
+				client->send_buffer += "475 : ",
+				client->send_buffer += client->nick,
+				client->send_buffer += " ",
+				client->send_buffer += c->name,
+				client->send_buffer += " :Cannot join channel (+k)\n", false);
+		c->users.push_back(client);
+		client->send_buffer += ":";
+		client->send_buffer += client->nick;
+		client->send_buffer += " JOIN ";
+		client->send_buffer += c->name;
+		client->send_buffer += "\n";
+		kit++;
+	}
+	// for (std::vector<std::string>::iterator it = params.begin() + 2;it != params.end();it++)
+	// {
+	// 	client->send_buffer += (*it).c_str();
+	// 	if (it < params.end() - 1)
+	// 		client->send_buffer += " ";
+	// }
+	// client->send_buffer += "\n";
+	std::cout << "debug: join: " << client->send_buffer << std::endl;
 	return (true);
 }
 
@@ -376,8 +480,8 @@ void Server::parse_cmd(char *buffer, int client_fd, uint32_t index)
 		// 	break ;
 		if ((*it)[0] == "PRIVMSG" && privmsg_cmd(*it, &this->clients[index]))
 			break ;
-		// if ((*it)[0] == "JOIN")
-		// 	join_cmd();
+		if ((*it)[0] == "JOIN" && join_cmd(*it, &this->clients[index]))
+			break ;
 		if ((*it)[0] == "PING" && !ping_cmd(*it, &this->clients[index]))
 			break ;
 		// if ((*it)[0] == "WHOIS" && whois_cmd(*it, &this->clients[index]))

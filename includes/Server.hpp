@@ -6,7 +6,7 @@
 /*   By: pmagnero <pmagnero@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/10 10:01:22 by pmagnero          #+#    #+#             */
-/*   Updated: 2025/01/20 12:10:28 by pmagnero         ###   ########.fr       */
+/*   Updated: 2025/01/21 13:51:48 by pmagnero         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,10 +28,12 @@
 #include <cstddef>
 
 #include <vector>
+#include <set>
 #include <map>
 #include <algorithm>
 
-#include "Client.hpp"
+// #include "Client.hpp"
+#include "Channel.hpp"
 
 #define MAX_NB_CLIENT 10
 
@@ -54,6 +56,7 @@ class Server
 		sockaddr_in _serverAddr;
 		uint32_t client_map[10000];
 		Client clients[MAX_NB_CLIENT];
+		std::set<Channel *> channels;
 
 		int accept_new_client(int fd);
 		void handle_client_event(int client_fd, uint32_t revents);
@@ -74,6 +77,7 @@ class Server
 
 		bool is_valid_nick(const std::string& nick);
 		Client *nick_exist(const std::string& nick);
+		Channel *channel_exist(const std::string& channel);
 
 		std::string getTime() const;
 		void debug(std::string msg, Client *from, bool to);
