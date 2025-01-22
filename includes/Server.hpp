@@ -6,7 +6,7 @@
 /*   By: pmagnero <pmagnero@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/10 10:01:22 by pmagnero          #+#    #+#             */
-/*   Updated: 2025/01/21 13:51:48 by pmagnero         ###   ########.fr       */
+/*   Updated: 2025/01/22 15:44:12 by pmagnero         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,14 +64,14 @@ class Server
 		void epoll_add_new(int epoll_fd, int serv_fd, uint32_t events);
 		void epoll_mod(int epoll_fd, int client_fd, uint32_t events, int index);
 
-		void parse_cmd(char *buffer, int client_fd, uint32_t index);
+		void parse_cmd(std::string buffer, int client_fd, uint32_t index);
 
 		bool pass_cmd(std::vector<std::string> params, Client *client);
 		bool nick_cmd(std::vector<std::string> params, Client *client);
 		bool user_cmd(std::vector<std::string> params, Client *client);
 		bool ping_cmd(std::vector<std::string> params, Client *client);
 		bool oper_cmd(std::vector<std::string> params, Client *client);
-		// bool quit_cmd(std::vector<std::string> params, Client *client);
+		bool quit_cmd(std::vector<std::string> params, Client *client);
 		bool join_cmd(std::vector<std::string> params, Client *client);
 		bool privmsg_cmd(std::vector<std::string> params, Client *client);
 

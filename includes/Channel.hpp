@@ -15,6 +15,7 @@ class Channel
 {
 	public:
 		Channel();
+		Channel& operator=(const Channel& src);
 		Channel(const std::string& name);
 		~Channel();
 		std::vector<Client *> users;
@@ -24,4 +25,6 @@ class Channel
 		uint16_t mode;
 		std::string key;
 		uint16_t limit;
+
+		bool is_user(Client *c);
 };
