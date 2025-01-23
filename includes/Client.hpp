@@ -5,13 +5,14 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/epoll.h>
-#include <set>
+#include <map>
 #include <algorithm>
 
 class Client
 {
 	public:
 		Client();
+		Client& operator=(const Client& src);
 		~Client();
 		bool is_used;
 		int client_fd;
@@ -21,11 +22,10 @@ class Client
 		std::string send_buffer;
 		bool registered;
 		bool authenticated;
-		bool send_to_all;
 		bool is_operator;
 		bool quit;
 		std::string nick;
 		std::string user;
 		std::string realname;
-		std::set<Client *> sendto;
+		std::map<Client *, std::string> sendto;
 };

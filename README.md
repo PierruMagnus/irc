@@ -9,3 +9,7 @@ https://ircv3.net/specs/extensions/capability-negotiation.html
 https://modern.ircdocs.horse/#client-to-server-protocol-structure
 
 http://sdz.tdct.org/sdz/irssi-le-client-irc-du-futur.html
+
+https://github.com/irssi/irssi/blob/master/docs/manual.txt
+
+/SET flood_max_msgs 0

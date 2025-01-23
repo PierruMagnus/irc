@@ -6,7 +6,7 @@
 #    By: pmagnero <pmagnero@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/11/04 11:30:16 by pmagnero          #+#    #+#              #
-#    Updated: 2025/01/21 13:31:41 by pmagnero         ###   ########.fr        #
+#    Updated: 2025/01/23 13:30:53 by pmagnero         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -18,12 +18,15 @@ FLAG				= -Wall -Wextra -std=c++98 -pedantic -ggdb #-Werror
 SRCS				=	srcs/main.cpp \
 						srcs/Server.cpp \
 						srcs/Client.cpp \
-						srcs/Channel.cpp
+						srcs/Channel.cpp \
+						srcs/cmds.cpp \
+						srcs/utils.cpp
 
 INC					=	includes
 INCS				= 	$(INC)/Server.hpp \
 						$(INC)/Client.hpp \
-						$(INC)/Channel.hpp
+						$(INC)/Channel.hpp \
+						$(INC)/Numerics.hpp
 
 OBJS_DIR			=	objs/
 OBJS				=	$(SRCS:.cpp=.o)

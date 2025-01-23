@@ -1,6 +1,6 @@
 #include "../includes/Channel.hpp"
 
-Channel::Channel(): topic("kektopic"), name("none"), mode(0), key(""), limit(2)
+Channel::Channel(): topic(""), name("none"), mode(0), key(""), limit(2)
 {}
 
 Channel &Channel::operator=(const Channel& src)
@@ -11,17 +11,15 @@ Channel &Channel::operator=(const Channel& src)
 		this->limit = src.limit;
 		this->mode = src.mode;
 		this->name = src.name;
-		// this->name = src.name;
-		// this->name += "_copy";
 		this->topic = src.topic;
-		// std::vector<Client *> v(src.users);
-		// this->users = v;
 		for (std::vector<Client *>::const_iterator it = src.users.begin();it != src.users.end();it++)
 		{
 			this->users.push_back(*it);
 		}
-		// std::copy ( src.users.begin(), src.users.end(), this->users.begin() );
-
+		for (std::vector<Client *>::const_iterator it = src.operators.begin();it != src.operators.end();it++)
+		{
+			this->operators.push_back(*it);
+		}
 		this->operators = src.operators;
 	}
     return *this;
@@ -37,7 +35,27 @@ bool Channel::is_user(Client *c)
 	return (false);
 }
 
-Channel::Channel(const std::string &str): topic("kektopic"), name(str), mode(0), key(""), limit(2)
+bool Channel::user_exist(Client *client)
+{
+	for (std::vector<Client *>::iterator it = this->users.begin();it != this->users.end();it++)
+	{
+		if ((*it)->nick == client->nick)
+			return (true);
+	}
+	return (false);
+}
+
+bool Channel::is_operator(Client *client)
+{
+	for (std::vector<Client *>::iterator it = this->operators.begin();it != this->operators.end();it++)
+	{
+		if ((*it)->nick == client->nick)
+			return (true);
+	}
+	return (false);
+}
+
+Channel::Channel(const std::string &str): topic(""), name(str), mode(0), key(""), limit(2)
 {}
 
 Channel::~Channel()

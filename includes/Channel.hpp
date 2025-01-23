@@ -27,4 +27,6 @@ class Channel
 		uint16_t limit;
 
 		bool is_user(Client *c);
+		bool user_exist(Client *client);
+		bool is_operator(Client *client);
 };

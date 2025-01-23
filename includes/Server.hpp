@@ -6,10 +6,11 @@
 /*   By: pmagnero <pmagnero@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/10 10:01:22 by pmagnero          #+#    #+#             */
-/*   Updated: 2025/01/22 15:44:12 by pmagnero         ###   ########.fr       */
+/*   Updated: 2025/01/23 14:51:23 by pmagnero         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#pragma once
 #include <iostream>
 #include <cstdlib>
 #include <unistd.h>
@@ -26,6 +27,7 @@
 #include <ctime>
 #include <iomanip>
 #include <cstddef>
+# include <fcntl.h>
 
 #include <vector>
 #include <set>
@@ -34,6 +36,8 @@
 
 // #include "Client.hpp"
 #include "Channel.hpp"
+#include "Numerics.hpp"
+
 
 #define MAX_NB_CLIENT 10
 
@@ -64,7 +68,7 @@ class Server
 		void epoll_add_new(int epoll_fd, int serv_fd, uint32_t events);
 		void epoll_mod(int epoll_fd, int client_fd, uint32_t events, int index);
 
-		void parse_cmd(std::string buffer, int client_fd, uint32_t index);
+		void parse_cmd(std::string buffer, Client *client);
 
 		bool pass_cmd(std::vector<std::string> params, Client *client);
 		bool nick_cmd(std::vector<std::string> params, Client *client);
@@ -74,6 +78,7 @@ class Server
 		bool quit_cmd(std::vector<std::string> params, Client *client);
 		bool join_cmd(std::vector<std::string> params, Client *client);
 		bool privmsg_cmd(std::vector<std::string> params, Client *client);
+		bool topic_cmd(std::vector<std::string> params, Client *client);
 
 		bool is_valid_nick(const std::string& nick);
 		Client *nick_exist(const std::string& nick);
