@@ -192,6 +192,12 @@ void Server::parse_cmd(std::string buffer, Client *client)
 			break ;
 		if ((*it)[0] == "TOPIC" && !topic_cmd(*it, client))
 			break ;
+		if ((*it)[0] == "KICK" && !kick_cmd(*it, client))
+			break ;
+		if ((*it)[0] == "INVITE" && !invite_cmd(*it, client))
+			break ;
+		if ((*it)[0] == "MODE" && !mode_cmd(*it, client))
+			break ;
 	}
 }
 
@@ -257,9 +263,10 @@ void Server::handle_client_event(int client_fd, uint32_t revents)
 		// {
 			// debug(send_buffer, &this->clients[index], 1);
 			// std::cout << "debug: vector: " << this->clients[index].sendto.size() << std::endl;
-			for (std::map<Client *, std::string>::iterator it = this->clients[index].sendto.begin();it != this->clients[index].sendto.end();it++)
+			std::cout << "sendto map: " << this->clients[index].sendto.size() << std::endl;
+			for (std::vector<std::pair<Client *, std::string> >::iterator it = this->clients[index].sendto.begin();it != this->clients[index].sendto.end();it++)
 			{
-				std::cout << "send_buffer: " << (*it).first->src_port << " | " << (*it).second << std::endl;
+				std::cout << "send_buffer: " << (*it).first->nick << " | " << (*it).second << std::endl;
 				ssize_t sent = send((*it).first->client_fd, (*it).second.c_str(), (*it).second.size(), 0);
 				if (sent < 0) {
 					if (errno == EAGAIN)

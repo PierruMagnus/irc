@@ -5,7 +5,7 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/epoll.h>
-#include <map>
+#include <vector>
 #include <algorithm>
 
 class Client
@@ -27,5 +27,5 @@ class Client
 		std::string nick;
 		std::string user;
 		std::string realname;
-		std::map<Client *, std::string> sendto;
+		std::vector<std::pair<Client *, std::string> > sendto;
 };

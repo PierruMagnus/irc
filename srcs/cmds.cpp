@@ -1,5 +1,9 @@
 #include "../includes/Server.hpp"
 
+void Server::sendTo(Client *client, Client *to, const std::string &msg)
+{
+	client->sendto.push_back(std::make_pair(to, msg));
+}
 
 bool Server::is_valid_nick(const std::string& nick)
 {
@@ -38,34 +42,31 @@ Channel *Server::channel_exist(const std::string& channel)
 
 bool Server::pass_cmd(std::vector<std::string> params, Client *client)
 {
-	std::string msg = "";
 	const std::string pre = "*";
 	if (params.size() == 1 || params[1].empty())
-		return (msg = ERR_NEEDMOREPARAMS(pre, "PASS"), client->sendto.insert(std::make_pair(client, msg)), false);
+		return (this->sendTo(client, client, ERR_NEEDMOREPARAMS(pre, "PASS")), false);
 	if (params[1] != this->_password)
-		return (msg = ERR_PASSWDMISMATCH(pre), client->sendto.insert(std::make_pair(client, msg)), false);
+		return (this->sendTo(client, client, ERR_PASSWDMISMATCH(pre)), false);
 	if (client->registered)
-		return (msg = ERR_ALREADYREGISTERED(pre), client->sendto.insert(std::make_pair(client, msg)), false);
+		return (this->sendTo(client, client, ERR_ALREADYREGISTERED(pre)), false);
 	client->authenticated = true;
 	return (true);
 }
 
 bool Server::nick_cmd(std::vector<std::string> params, Client *client)
 {
-	std::string msg;
 	if (params.size() == 1 || params[1].empty())
-		return (msg = ERR_NONICKNAMEGIVEN(), client->sendto.insert(std::make_pair(client, msg)), false);
+		return (this->sendTo(client, client, ERR_NONICKNAMEGIVEN()), false);
 	if (!is_valid_nick(params[1]))
-		return (msg = ERR_ERRONEUSNICKNAME(), client->sendto.insert(std::make_pair(client, msg)), false);
+		return (this->sendTo(client, client, ERR_ERRONEUSNICKNAME()), false);
 	if (nick_exist(params[1]))
-		return (msg = ERR_NICKNAMEINUSE(params[1]), client->sendto.insert(std::make_pair(client, msg)), false);
+		return (this->sendTo(client, client, ERR_NICKNAMEINUSE(params[1])), false);
 	if (client->registered)
 	{
 		debug("Changing nickname.", client, 0);
-		msg = CHANGING_NICK(client->nick, params[1]);
+		this->sendTo(client, client, CHANGING_NICK(client->nick, client->user, params[1]));
 	}
 	client->nick = params[1];
-	// client->sendto.insert(std::make_pair(client, msg));
 	return (true);
 }
 
@@ -73,54 +74,45 @@ bool Server::user_cmd(std::vector<std::string> params, Client *client)
 {
 	std::string msg = "";
 	if (!client->authenticated)
-		return (msg = ERR_NOTREGISTERED(client->nick), client->sendto.insert(std::make_pair(client, msg)), false);
-	if (params.size() == 1 || params[1].empty())
-		return (msg = ERR_NEEDMOREPARAMS(client->nick, "USER"), client->sendto.insert(std::make_pair(client, msg)), false);
+		return (this->sendTo(client, client, ERR_NOTREGISTERED(client->nick)), false);
+	if (params.size() < 5 || params[1].empty() || params[2].empty() || params[3].empty() || params[4].empty())
+		return (this->sendTo(client, client, ERR_NEEDMOREPARAMS(client->nick, "USER")), false);
 	if (client->registered)
-		return (msg = ERR_ALREADYREGISTERED(client->nick), client->sendto.insert(std::make_pair(client, msg)), false);
+		return (this->sendTo(client, client, ERR_ALREADYREGISTERED(client->nick)), false);
 	client->user = params[1];
 	client->realname = params[4];
-	if (params.size() == 6)
-		client->realname += params[5];
+	client->realname += params[5];
 	msg = RPL_WELCOME(client->nick);
 	msg += RPL_YOURHOST(client->nick);
 	msg += RPL_CREATED(client->nick, getTime());
 	client->registered = true;
-	client->sendto.insert(std::make_pair(client, msg));
-	std::cout << "USER: " << msg << std::endl;
+	this->sendTo(client, client, msg);
 	return (true);
 }
 
 bool Server::oper_cmd(std::vector<std::string> params, Client *client)
 {
-	std::string msg;
 	if (params.size() < 3 || params[1].empty() || params[2].empty())
-		return (msg = ERR_NEEDMOREPARAMS(client->nick, "OPER"), client->sendto.insert(std::make_pair(client, msg)), false);
+		return (this->sendTo(client, client, ERR_NEEDMOREPARAMS(client->nick, "OPER")), false);
 	std::map<std::string, std::string>::iterator it = this->operators.find(params[1]);
 	if (it == this->operators.end() || params[2] != it->second)
-		return (msg = ERR_PASSWDMISMATCH(client->nick), client->sendto.insert(std::make_pair(client, msg)), false);
+		return (this->sendTo(client, client, ERR_PASSWDMISMATCH(client->nick)), false);
 	client->is_operator = true;
-	msg = RPL_YOUREOPER(client->nick);
-	client->sendto.insert(std::make_pair(client, msg));
+	this->sendTo(client, client, RPL_YOUREOPER(client->nick));
 	return (true);
 }
 
 bool Server::ping_cmd(std::vector<std::string> params, Client *client)
 {
-	std::string msg;
-	msg = PONG(params[1]);
-	client->sendto.insert(std::make_pair(client, msg));
-	std::cout << "PONG: " << msg << std::endl;
-	// client->send_buffer += PONG(params[1]);
+	this->sendTo(client, client, PONG(params[1]));
 	return (true);
 }
 
 bool Server::privmsg_cmd(std::vector<std::string> params, Client *client)
 {
-	std::string msg = "";
 	std::string token = "";
 	if (params.size() < 3 || params[1].empty() || params[2].empty())
-		return (msg = ERR_NEEDMOREPARAMS(client->nick, "PRIVMSG"), client->sendto.insert(std::make_pair(client, msg)), false);
+		return (this->sendTo(client, client, ERR_NEEDMOREPARAMS(client->nick, "PRIVMSG")), false);
 	(params[1]).erase((params[1]).find_last_not_of(' ') + 1);
 	(params[1]).erase(0, (params[1]).find_first_not_of(' '));
 	for (std::vector<std::string>::iterator it = params.begin() + 2;it != params.end();it++)
@@ -133,30 +125,21 @@ bool Server::privmsg_cmd(std::vector<std::string> params, Client *client)
 	{
 		Client *c = nick_exist((params[1]));
 		if (!c)
-			return (msg = ERR_NOSUCHNICK(client->nick, params[1]),
-				client->sendto.insert(std::make_pair(client, msg)),
-				false);
-		msg = SEND_PRIVMSG(client->nick, params[1], token);
-		client->sendto.insert(std::make_pair(c, msg));
-		return (true);
+			return (this->sendTo(client, client, ERR_NOSUCHNICK(client->nick, params[1])), false);
+		return (this->sendTo(client, c, SEND_PRIVMSG(client->nick, client->user, params[1], token)), true);
 	}
 	else
 	{
 		Channel *cc = channel_exist(params[1]);
 		if (!cc)
-			return (msg = ERR_NOSUCHNICK(client->nick, params[1]),
-				client->sendto.insert(std::make_pair(client, msg)),
-				false);
+			return (this->sendTo(client, client, ERR_NOSUCHNICK(client->nick, params[1])), false);
 		if (!cc->is_user(client))
-			return (msg = ERR_CANNOTSENDTOCHAN(client->nick, params[1]),
-				client->sendto.insert(std::make_pair(client, msg)),
-				false);
+			return (this->sendTo(client, client, ERR_CANNOTSENDTOCHAN(client->nick, params[1])), false);
 
 		for (std::vector<Client *>::iterator it = cc->users.begin();it != cc->users.end();it++)
 		{
-			msg = SEND_PRIVMSG(client->nick, params[1], token);
 			if (client->nick != (*it)->nick)
-				client->sendto.insert(std::make_pair(*it, msg));
+				this->sendTo(client, *it, SEND_PRIVMSG(client->nick, client->user, params[1], token));
 		}
 		return (true);
 	}
@@ -164,11 +147,10 @@ bool Server::privmsg_cmd(std::vector<std::string> params, Client *client)
 
 bool Server::join_cmd(std::vector<std::string> params, Client *client)
 {
-	std::string msg = "";
-	bool new_user = false;
+	bool new_channel = false;
 	std::string key = "";
 	if (params.size() < 2 || params[1].empty())
-		return (msg = ERR_NEEDMOREPARAMS(client->nick, "JOIN"), client->sendto.insert(std::make_pair(client, msg)), false);
+		return (this->sendTo(client, client, ERR_NEEDMOREPARAMS(client->nick, "JOIN")), false);
 	if (params.size() == 3 && !params[2].empty())
 		key =  params[2];
 	(params[1]).erase((params[1]).find_last_not_of(' ') + 1);
@@ -180,48 +162,50 @@ bool Server::join_cmd(std::vector<std::string> params, Client *client)
 		c = cc;
 		c->operators.push_back(client);
 		this->channels.insert(cc);
-		new_user = true;
+		new_channel = true;
+		c->key = key;
 	}
 	if (c->users.size() == c->limit)
-		return (msg = ERR_CHANNELISFULL(client->nick, c->name),
-			client->sendto.insert(std::make_pair(client, msg)),
-			false);
+		return (this->sendTo(client, client, ERR_CHANNELISFULL(client->nick, c->name)), false);
 	if (key != c->key)
-		return (msg = ERR_BADCHANNELKEY(client->nick, c->name),
-			client->sendto.insert(std::make_pair(client, msg)),
-			false);
+		return (this->sendTo(client, client, ERR_BADCHANNELKEY(client->nick, c->name)), false);
+	if (!new_channel && c->mode && !c->is_invited(client))
+		return (this->sendTo(client, client, ERR_INVITEONLYCHAN(client->nick, c->name)), false);
+	c->rm_invite(client);
 	c->users.push_back(client);
+	std::string user_list;
 	for (std::vector<Client *>::iterator it = c->users.begin();it != c->users.end();it++)
 	{
-		msg = JOIN_CHANNEL(client->nick, c->name);
-		if (client->nick != (*it)->nick)
-			client->sendto.insert(std::make_pair(*it, msg));
+		user_list.append((*it)->nick + " ");
+		// if (client->nick != (*it)->nick)
+		this->sendTo(client, *it, JOIN_CHANNEL(client->nick, client->user, c->name));
 	}
-	if (new_user)
-		msg = RPL_NOTOPIC(client->nick, c->name);
+	std::cout << "user_list: " << user_list << std::endl;
+	if (new_channel)
+		this->sendTo(client, client, RPL_NOTOPIC(client->nick, c->name));
 	else
-		msg = RPL_TOPIC(client->nick, c->name, c->topic);
-	client->sendto.insert(std::make_pair(client, msg));
+		this->sendTo(client, client, RPL_TOPIC(client->nick, c->name, c->topic));
+	this->sendTo(client, client, RPL_NAMREPLY(client->nick, c->name, user_list));
+	this->sendTo(client, client, RPL_ENDOFNAMES(client->nick, c->name));
 	return (true);
 }
 
 bool Server::topic_cmd(std::vector<std::string> params, Client *client)
 {
-	std::string msg = "";
 	std::string token = "";
 	if (params.size() < 2 || params[1].empty())
-		return (msg = ERR_NEEDMOREPARAMS(client->nick, "TOPIC"), client->sendto.insert(std::make_pair(client, msg)), false);
+		return (this->sendTo(client, client, ERR_NEEDMOREPARAMS(client->nick, "TOPIC")), false);
 	Channel *c = channel_exist(params[1]);
 	if (!c)
-		return (msg = ERR_NOSUCHCHANNEL(client->nick, params[1]), client->sendto.insert(std::make_pair(client, msg)),false);
-	if (!c->user_exist(client))
-		return (msg = ERR_NOTONCHANNEL(client->nick, params[1]), client->sendto.insert(std::make_pair(client, msg)),false);
+		return (this->sendTo(client, client, ERR_NOSUCHCHANNEL(client->nick, params[1])), false);
+	if (!c->user_exist(client->nick))
+		return (this->sendTo(client, client, ERR_NOTONCHANNEL(client->nick, params[1])), false);
 	if (!c->is_operator(client))
-		return (msg = ERR_CHANOPRIVSNEEDED(client->nick, params[1]), client->sendto.insert(std::make_pair(client, msg)),false);
+		return (this->sendTo(client, client, ERR_CHANOPRIVSNEEDED(client->nick, params[1])), false);
 	if (params.size() == 2 && !c->topic.empty())
-		return (msg = RPL_TOPIC(client->nick, params[1], c->topic), client->sendto.insert(std::make_pair(client, msg)),true);
+		return (this->sendTo(client, client, RPL_TOPIC(client->nick, params[1], c->topic)), true);
 	else if (params.size() == 2 && c->topic.empty())
-		return (msg = RPL_NOTOPIC(client->nick, params[1]), client->sendto.insert(std::make_pair(client, msg)),true);
+		return (this->sendTo(client, client, RPL_NOTOPIC(client->nick, params[1])), true);
 	if (params[2][0] == ':')
 		params[2].erase(0, 1);
 	for (std::vector<std::string>::iterator it = params.begin() + 2;it != params.end();it++)
@@ -230,22 +214,113 @@ bool Server::topic_cmd(std::vector<std::string> params, Client *client)
 		if (it < params.end() - 1)
 			token += " ";
 	}
-	std::cout << "KEK: " << params[2] << std::endl;
-	c->topic = msg;
+	c->topic = token;
 	for (std::vector<Client *>::iterator it = c->users.begin();it != c->users.end();it++)
 	{
-		msg = SEND_TOPIC(params[1], token);
-		client->sendto.insert(std::make_pair((*it), msg));
+		this->sendTo(client, *it, SEND_TOPIC(params[1], token));
 	}
+	return (true);
+}
+
+bool Server::kick_cmd(std::vector<std::string> params, Client *client)
+{
+	std::string token = "Default kick message";
+	if (params.size() < 3 || params[1].empty() || params[2].empty())
+		return (this->sendTo(client, client, ERR_NEEDMOREPARAMS(client->nick, "KICK")), false);
+	Channel *c = channel_exist(params[1]);
+	if (!c)
+		return (this->sendTo(client, client, ERR_NOSUCHCHANNEL(client->nick, params[1])),false);
+	if (!c->user_exist(client->nick))
+		return (this->sendTo(client, client, ERR_NOTONCHANNEL(client->nick, params[1])),false);
+	if (!c->user_exist(params[2]))
+		return (this->sendTo(client, client, ERR_USERNOTINCHANNEL(client->nick, params[2], params[1])),false);
+	if (!c->is_operator(client))
+		return (this->sendTo(client, client, ERR_CHANOPRIVSNEEDED(client->nick, params[1])),false);
+	if (params.size() >= 3 && params[3][0] == ':')
+	{
+		token.clear();
+		params[3].erase(0, 1);
+		for (std::vector<std::string>::iterator it = params.begin() + 3;it != params.end();it++)
+		{
+			token += (*it).c_str();
+			if (it < params.end() - 1)
+				token += " ";
+		}
+	}
+	Client *cl = c->kick_client(params[2]);
+
+	for (std::vector<Client *>::iterator it = c->users.begin();it != c->users.end();it++)
+			this->sendTo(client, *it, KICK_MSG(client->nick, client->user, params[1], params[2], token));
+	this->sendTo(client, cl, KICK_MSG(client->nick, client->user, params[1], params[2], token));
+	return (true);
+}
+
+bool Server::invite_cmd(std::vector<std::string> params, Client *client)
+{
+	if (params.size() < 3 || params[1].empty() || params[2].empty())
+		return (this->sendTo(client, client, ERR_NEEDMOREPARAMS(client->nick, "INVITE")), false);
+	Channel *c = channel_exist(params[2]);
+	if (!c)
+		return (this->sendTo(client, client, ERR_NOSUCHCHANNEL(client->nick, params[2])),false);
+	if (!c->user_exist(client->nick))
+		return (this->sendTo(client, client, ERR_NOTONCHANNEL(client->nick, params[2])),false);
+	if (c->user_exist(params[1]))
+		return (this->sendTo(client, client, ERR_USERONCHANNEL(client->nick, params[1], params[2])),false);
+	if (c->mode && !c->is_operator(client))
+		return (this->sendTo(client, client, ERR_CHANOPRIVSNEEDED(client->nick, params[1])),false);
+	Client *cl = nick_exist(params[1]);
+	if (!cl)
+		return (this->sendTo(client, client, ERR_NOSUCHNICK(client->nick, params[1])),false);
+	c->invite.push_back(cl);
+	this->sendTo(client, client, RPL_INVITING(client->nick, params[1], params[2]));
+	this->sendTo(client, cl, SEND_INVITE(client->nick, client->user, params[1], params[2]));
+	return (true);
+}
+
+bool Server::mode_cmd(std::vector<std::string> params, Client *client)
+{
+	// if (params.size() < 3 || params[1].empty() || params[2].empty())
+	// 	return (this->sendTo(client, client, ERR_NEEDMOREPARAMS(client->nick, "INVITE")), false);
+	// Channel *c = channel_exist(params[2]);
+	// if (!c)
+	// 	return (this->sendTo(client, client, ERR_NOSUCHCHANNEL(client->nick, params[2])),false);
+	// if (!c->user_exist(client->nick))
+	// 	return (this->sendTo(client, client, ERR_NOTONCHANNEL(client->nick, params[2])),false);
+	// if (c->user_exist(params[1]))
+	// 	return (this->sendTo(client, client, ERR_USERONCHANNEL(client->nick, params[1], params[2])),false);
+	// if (c->mode && !c->is_operator(client))
+	// 	return (this->sendTo(client, client, ERR_CHANOPRIVSNEEDED(client->nick, params[1])),false);
+	// Client *cl = nick_exist(params[1]);
+	// if (!cl)
+	// 	return (this->sendTo(client, client, ERR_NOSUCHNICK(client->nick, params[1])),false);
+	// c->invite.push_back(cl);
+	// this->sendTo(client, client, RPL_INVITING(client->nick, params[1], params[2]));
+	// this->sendTo(client, cl, SEND_INVITE(client->nick, client->user, params[1], params[2]));
 	return (true);
 }
 
 bool Server::quit_cmd(std::vector<std::string> params, Client *client)
 {
-	(void)params;
-	std::cout << "QUIIIIIIIT" << std::endl;
 	client->is_used = false;
 	client->registered = false;
 	client->authenticated = false;
+	for (std::set<Channel *>::iterator it = this->channels.begin();it != this->channels.end();)
+	{
+		std::vector<Client *>::iterator itt = std::find((*it)->users.begin(), (*it)->users.end(), client);
+		if (itt != (*it)->users.end())
+			(*it)->users.erase(itt);
+		for (itt = (*it)->users.begin();itt != (*it)->users.end();itt++)
+				this->sendTo(client, *itt, QUIT_MSG(client->nick, params[1]));
+		itt = std::find((*it)->operators.begin(), (*it)->operators.end(), client);
+		if (itt != (*it)->operators.end())
+			(*it)->operators.erase(itt);
+		if ((*it)->users.size() == 0)
+		{
+			delete *(it);
+			this->channels.erase(it++);
+		}
+		else
+			++it;
+	}
 	return (true);
 }

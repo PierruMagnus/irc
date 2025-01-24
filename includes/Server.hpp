@@ -6,7 +6,7 @@
 /*   By: pmagnero <pmagnero@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/10 10:01:22 by pmagnero          #+#    #+#             */
-/*   Updated: 2025/01/23 14:51:23 by pmagnero         ###   ########.fr       */
+/*   Updated: 2025/01/24 17:32:44 by pmagnero         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,6 +70,8 @@ class Server
 
 		void parse_cmd(std::string buffer, Client *client);
 
+		void sendTo(Client *client, Client *to, const std::string &msg);
+
 		bool pass_cmd(std::vector<std::string> params, Client *client);
 		bool nick_cmd(std::vector<std::string> params, Client *client);
 		bool user_cmd(std::vector<std::string> params, Client *client);
@@ -79,6 +81,9 @@ class Server
 		bool join_cmd(std::vector<std::string> params, Client *client);
 		bool privmsg_cmd(std::vector<std::string> params, Client *client);
 		bool topic_cmd(std::vector<std::string> params, Client *client);
+		bool kick_cmd(std::vector<std::string> params, Client *client);
+		bool invite_cmd(std::vector<std::string> params, Client *client);
+		bool mode_cmd(std::vector<std::string> params, Client *client);
 
 		bool is_valid_nick(const std::string& nick);
 		Client *nick_exist(const std::string& nick);

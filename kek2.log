@@ -1,0 +1,25 @@
+<< CAP LS
+<< PASS kek
+<< NICK magnus
+<< USER pmagnero pmagnero localhost :Pierre Magneron
+>> :localhost 001 magnus :Welcome to the KEK Network, magnus
+<< MODE magnus +i
+>> :localhost 002 magnus :Your host is KEKservername, running version 3.0
+>> :localhost 003 magnus :This server was created [2025-01-24 17:04:45]
+<< PING localhost
+>> PONG localhost localhost
+--> lag pong
+<< JOIN #kek
+>> :localhost 331 magnus #kek :No topic is set
+<< PRIVMSG #kek :wef
+<< INVITE pouet #kek
+>> :localhost 341 magnus pouet #kek
+>> :pouet!pmagnero@localhost JOIN #kek
+>> :pouet!pmagnero@localhost PRIVMSG #kek :wef
+<< PRIVMSG #kek :wef
+<< PING localhost
+>> PONG localhost localhost
+--> lag pong
+<< PING localhost
+>> PONG localhost localhost
+--> lag pong

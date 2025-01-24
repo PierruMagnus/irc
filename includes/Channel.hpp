@@ -19,6 +19,7 @@ class Channel
 		Channel(const std::string& name);
 		~Channel();
 		std::vector<Client *> users;
+		std::vector<Client *> invite;
 		std::vector<Client *> operators;
 		std::string topic;
 		std::string name;
@@ -27,6 +28,11 @@ class Channel
 		uint16_t limit;
 
 		bool is_user(Client *c);
-		bool user_exist(Client *client);
+		bool user_exist(const std::string &client);
 		bool is_operator(Client *client);
+		bool is_invited(Client *client);
+
+		void rm_invite(Client *client);
+
+		Client *kick_client(const std::string &user);
 };
