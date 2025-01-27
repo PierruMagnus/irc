@@ -1,6 +1,6 @@
 #include "../includes/Channel.hpp"
 
-Channel::Channel(): topic(""), name("none"), mode(1), key(""), limit(2)
+Channel::Channel(): topic(""), name("none"), mode(1), topic_mode(true), key(""), limit(2)
 {}
 
 Channel &Channel::operator=(const Channel& src)
@@ -97,7 +97,7 @@ Client *Channel::kick_client(const std::string &user)
 	return (cl);
 }
 
-Channel::Channel(const std::string &str): topic(""), name(str), mode(1), key(""), limit(2)
+Channel::Channel(const std::string &str): topic(""), name(str), mode(1), topic_mode(true), key(""), limit(2)
 {}
 
 Channel::~Channel()

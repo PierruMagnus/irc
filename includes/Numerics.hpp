@@ -37,7 +37,7 @@
 #define ERR_NOSUCHCHANNEL(client, channel) ":localhost 403 "+ client + " " + channel + " :No such channel\r\n"
 #define ERR_NOTONCHANNEL(client, channel) ":localhost 442 "+ client + " " + channel + " :You're not on that channel\r\n"
 #define ERR_USERONCHANNEL(client, nick, channel) ":localhost 443 "+ client + " " + nick + " " + channel + " :is already on channel\r\n"
-#define ERR_CHANOPRIVSNEEDED(client, channel) ": 482 "+ client + "!pmagnero@localhost " + channel + " :You're not channel operator\r\n"
+#define ERR_CHANOPRIVSNEEDED(client, user, channel) ":localhost 482 "+ client + "!" + user + "@localhost " + channel + " :You're not channel operator\r\n"
 
 #define QUIT_MSG(client, msg) ":" + client + " QUIT " + msg + "\r\n"
 
@@ -46,3 +46,8 @@
 
 #define RPL_INVITING(client, nick, channel) ":localhost 341 " + client + " " + nick + " " + channel + "\r\n"
 #define SEND_INVITE(client, user, nick, channel) ":" + client + "!" + user + "@localhost" + " INVITE " + nick + " " + channel + "\r\n"
+
+#define RPL_CHANNELMODEIS(client, channel, mode) ":localhost 324 " + client + " " + channel + " " + mode + "\r\n"
+#define RPL_MODE(client, user, channel, mode) ":" + client + "!" + user + "@localhost MODE " + channel + " " + mode + "\r\n"
+#define ERR_UMODEUNKNOWNFLAG(client, user) ":localhost 501 "+ client + "!" + user + "@localhost :Unknown MODE flag\r\n"
+

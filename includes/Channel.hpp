@@ -24,6 +24,7 @@ class Channel
 		std::string topic;
 		std::string name;
 		uint16_t mode;
+		bool topic_mode;
 		std::string key;
 		uint16_t limit;
 
