@@ -16,7 +16,12 @@
 #define RPL_WELCOME(client) ":localhost 001 " + client + " :Welcome to the KEK Network, " + client + "\r\n"
 #define RPL_YOURHOST(client) ":localhost 002 " + client + " :Your host is KEKservername, running version 3.0\r\n"
 #define RPL_CREATED(client, datetime) ":localhost 003 " + client + " :This server was created " + datetime + "\r\n"
+#define RPL_MYINFO(client, version, usermodes, chanmodes)	":localhost 004 " + client + " :KEKservername " + version + " " + usermodes + " " + chanmodes + "\r\n"
 #define RPL_YOUREOPER(client) ":localhost 381 " + client + " :You are now an IRC operator\r\n"
+#define RPL_MOTDSTART(client)	":localhost 375 " + client + " :- localhost Message of the day - \r\n"
+#define RPL_MOTD(client)	":localhost 372 " + client + " : KEK MOTD\n    OIIIIIIII\n    END MOTD\r\n"
+#define RPL_ENDOFMOTD(client)	":localhost 376 " + client + " :End of /MOTD command.\r\n"
+
 
 #define PONG(token) "PONG localhost " + token + "\r\n"
 
@@ -49,5 +54,6 @@
 
 #define RPL_CHANNELMODEIS(client, channel, mode) ":localhost 324 " + client + " " + channel + " " + mode + "\r\n"
 #define RPL_MODE(client, user, channel, mode) ":" + client + "!" + user + "@localhost MODE " + channel + " " + mode + "\r\n"
-#define ERR_UMODEUNKNOWNFLAG(client, user) ":localhost 501 "+ client + "!" + user + "@localhost :Unknown MODE flag\r\n"
+#define ERR_UNKNOWNMODE(client, user, modechar) ":localhost 472 "+ client + "!" + user + "@localhost " + modechar + " :is unknown mode char to me\r\n"
 
+#define ERR_BADCHANMASK(channel) ":localhost 476 "+ channel + " :Bad Channel Mask\r\n"

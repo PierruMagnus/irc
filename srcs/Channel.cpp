@@ -1,6 +1,6 @@
 #include "../includes/Channel.hpp"
 
-Channel::Channel(): topic(""), name("none"), mode(1), topic_mode(true), key(""), limit(2)
+Channel::Channel(): topic("TOPICKEK"), name("none"), mode(1), topic_mode(true), key(""), limit(2)
 {}
 
 Channel &Channel::operator=(const Channel& src)
@@ -70,6 +70,14 @@ void Channel::rm_invite(Client *client)
 		this->invite.erase(itt);
 }
 
+void Channel::rm_operator(Client *client)
+{
+	std::vector<Client *>::iterator itt = std::find(this->operators.begin(), this->operators.end(), client);
+	if (itt != this->operators.end())
+		this->operators.erase(itt);
+}
+
+
 Client *Channel::kick_client(const std::string &user)
 {
 	Client *cl = NULL;
@@ -97,7 +105,7 @@ Client *Channel::kick_client(const std::string &user)
 	return (cl);
 }
 
-Channel::Channel(const std::string &str): topic(""), name(str), mode(1), topic_mode(true), key(""), limit(2)
+Channel::Channel(const std::string &str): topic("TOPICKEK"), name(str), mode(1), topic_mode(true), key(""), limit(2)
 {}
 
 Channel::~Channel()

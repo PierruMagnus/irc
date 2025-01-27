@@ -6,7 +6,7 @@
 /*   By: pmagnero <pmagnero@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/10 10:01:22 by pmagnero          #+#    #+#             */
-/*   Updated: 2025/01/24 17:32:44 by pmagnero         ###   ########.fr       */
+/*   Updated: 2025/01/27 18:05:22 by pmagnero         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,8 @@
 #include <ctime>
 #include <iomanip>
 #include <cstddef>
-# include <fcntl.h>
+#include <fcntl.h>
+#include <sstream>
 
 #include <vector>
 #include <set>
@@ -71,6 +72,7 @@ class Server
 		void parse_cmd(std::string buffer, Client *client);
 
 		void sendTo(Client *client, Client *to, const std::string &msg);
+		void broadcast(Channel *c, Client *client, const std::string &msg);
 
 		bool pass_cmd(std::vector<std::string> params, Client *client);
 		bool nick_cmd(std::vector<std::string> params, Client *client);
@@ -91,4 +93,6 @@ class Server
 
 		std::string getTime() const;
 		void debug(std::string msg, Client *from, bool to);
+		void setColor( int color );
+		void resetColor( void );
 };

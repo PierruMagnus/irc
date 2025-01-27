@@ -258,48 +258,25 @@ void Server::handle_client_event(int client_fd, uint32_t revents)
 	}
 	if (revents & EPOLLOUT)
 	{
-        // std::string& send_buffer = this->clients[index].send_buffer;
-        // if (!send_buffer.empty())
-		// {
-			// debug(send_buffer, &this->clients[index], 1);
-			// std::cout << "debug: vector: " << this->clients[index].sendto.size() << std::endl;
-			std::cout << "sendto map: " << this->clients[index].sendto.size() << std::endl;
-			for (std::vector<std::pair<Client *, std::string> >::iterator it = this->clients[index].sendto.begin();it != this->clients[index].sendto.end();it++)
-			{
-				std::cout << "send_buffer: " << (*it).first->nick << " | " << (*it).second << std::endl;
-				ssize_t sent = send((*it).first->client_fd, (*it).second.c_str(), (*it).second.size(), 0);
-				if (sent < 0) {
-					if (errno == EAGAIN)
-						return;
-					std::cerr << "Error: send() failed." << std::endl;
-					close(client_fd);
-					this->clients[index].client_fd = -1;
-					this->clients[index].is_used = false;
-					epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+		for (std::vector<std::pair<Client *, std::string> >::iterator it = this->clients[index].sendto.begin();it != this->clients[index].sendto.end();it++)
+		{
+			debug((*it).second, (*it).first, 1);
+			// std::cout << "send_buffer: " << (*it).first->nick << " | " << (*it).second << std::endl;
+			ssize_t sent = send((*it).first->client_fd, (*it).second.c_str(), (*it).second.size(), 0);
+			if (sent < 0) {
+				if (errno == EAGAIN)
 					return;
-				}
-				(*it).second.clear();
-				// this->clients[index].sendto.clear();
+				std::cerr << "Error: send() failed." << std::endl;
+				close(client_fd);
+				this->clients[index].client_fd = -1;
+				this->clients[index].is_used = false;
+				epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+				return;
 			}
-			this->clients[index].sendto.clear();
-			epoll_mod(this->_epoll_fd, client_fd, EPOLLIN, index);
-			// if (this->clients[index].quit)
-			// {
-            //     close(client_fd);
-			// 	this->clients[index].client_fd = -1;
-            //     this->clients[index].is_used = false;
-			// 	this->clients[index].quit = false;
-			// 	this->clients[index].src_ip.clear();
-			// 	this->clients[index].src_port = 0;
-			// 	this->clients[index].send_buffer.clear();
-			// 	this->clients[index].registered = false;
-			// 	this->clients[index].authenticated = false;
-			// 	this->clients[index].is_operator = false;
-			// 	this->clients[index].nick.clear();
-			// 	this->clients[index].realname.clear();
-			// 	// epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-			// }
-        // }
+			(*it).second.clear();
+		}
+		this->clients[index].sendto.clear();
+		epoll_mod(this->_epoll_fd, client_fd, EPOLLIN, index);
     }
 }
 

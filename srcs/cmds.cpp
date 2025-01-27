@@ -5,6 +5,12 @@ void Server::sendTo(Client *client, Client *to, const std::string &msg)
 	client->sendto.push_back(std::make_pair(to, msg));
 }
 
+void Server::broadcast(Channel *c, Client *client, const std::string &msg)
+{
+	for (std::vector<Client *>::iterator it = c->users.begin();it != c->users.end();it++)
+		this->sendTo(client, *it, msg);
+}
+
 bool Server::is_valid_nick(const std::string& nick)
 {
 	if (std::isdigit(nick[0]))
@@ -86,6 +92,10 @@ bool Server::user_cmd(std::vector<std::string> params, Client *client)
 	msg = RPL_WELCOME(client->nick);
 	msg += RPL_YOURHOST(client->nick);
 	msg += RPL_CREATED(client->nick, getTime());
+	msg += RPL_MYINFO(client->nick, "3.0", "aiorsw", "itkol");
+	msg += RPL_MOTDSTART(client->nick);
+	msg += RPL_MOTD(client->nick);
+	msg += RPL_ENDOFMOTD(client->nick);
 	client->registered = true;
 	this->sendTo(client, client, msg);
 	return (true);
@@ -136,7 +146,6 @@ bool Server::privmsg_cmd(std::vector<std::string> params, Client *client)
 			return (this->sendTo(client, client, ERR_NOSUCHNICK(client->nick, params[1])), false);
 		if (!cc->is_user(client))
 			return (this->sendTo(client, client, ERR_CANNOTSENDTOCHAN(client->nick, params[1])), false);
-
 		for (std::vector<Client *>::iterator it = cc->users.begin();it != cc->users.end();it++)
 		{
 			if (client->nick != (*it)->nick)
@@ -156,6 +165,8 @@ bool Server::join_cmd(std::vector<std::string> params, Client *client)
 		key =  params[2];
 	(params[1]).erase((params[1]).find_last_not_of(' ') + 1);
 	(params[1]).erase(0, (params[1]).find_first_not_of(' '));
+	if (params[1][0] != '#')
+		return (this->sendTo(client, client, ERR_BADCHANMASK(params[1])), false);
 	Channel *c = channel_exist((params[1]));
 	if (!c)
 	{
@@ -166,7 +177,7 @@ bool Server::join_cmd(std::vector<std::string> params, Client *client)
 		new_channel = true;
 		c->key = key;
 	}
-	if (c->users.size() == c->limit)
+	if (c->users.size() >= c->limit)
 		return (this->sendTo(client, client, ERR_CHANNELISFULL(client->nick, c->name)), false);
 	if (key != c->key)
 		return (this->sendTo(client, client, ERR_BADCHANNELKEY(client->nick, c->name)), false);
@@ -177,12 +188,13 @@ bool Server::join_cmd(std::vector<std::string> params, Client *client)
 	std::string user_list;
 	for (std::vector<Client *>::iterator it = c->users.begin();it != c->users.end();it++)
 	{
+		if (c->is_operator(*it))
+			user_list.append("@");
 		user_list.append((*it)->nick + " ");
-		// if (client->nick != (*it)->nick)
 		this->sendTo(client, *it, JOIN_CHANNEL(client->nick, client->user, c->name));
 	}
 	std::cout << "user_list: " << user_list << std::endl;
-	if (new_channel)
+	if (c->topic.empty())
 		this->sendTo(client, client, RPL_NOTOPIC(client->nick, c->name));
 	else
 		this->sendTo(client, client, RPL_TOPIC(client->nick, c->name, c->topic));
@@ -201,7 +213,7 @@ bool Server::topic_cmd(std::vector<std::string> params, Client *client)
 		return (this->sendTo(client, client, ERR_NOSUCHCHANNEL(client->nick, params[1])), false);
 	if (!c->user_exist(client->nick))
 		return (this->sendTo(client, client, ERR_NOTONCHANNEL(client->nick, params[1])), false);
-	if (c->topic_mode && !c->is_operator(client))
+	if (params.size() < 3 && c->topic_mode && !c->is_operator(client))
 		return (this->sendTo(client, client, ERR_CHANOPRIVSNEEDED(client->nick, client->user, params[1])), false);
 	if (params.size() == 2 && !c->topic.empty())
 		return (this->sendTo(client, client, RPL_TOPIC(client->nick, params[1], c->topic)), true);
@@ -216,10 +228,7 @@ bool Server::topic_cmd(std::vector<std::string> params, Client *client)
 			token += " ";
 	}
 	c->topic = token;
-	for (std::vector<Client *>::iterator it = c->users.begin();it != c->users.end();it++)
-	{
-		this->sendTo(client, *it, SEND_TOPIC(params[1], token));
-	}
+	this->broadcast(c, client, SEND_TOPIC(params[1], token));
 	return (true);
 }
 
@@ -231,12 +240,12 @@ bool Server::kick_cmd(std::vector<std::string> params, Client *client)
 	Channel *c = channel_exist(params[1]);
 	if (!c)
 		return (this->sendTo(client, client, ERR_NOSUCHCHANNEL(client->nick, params[1])),false);
+	if (!c->is_operator(client))
+		return (this->sendTo(client, client, ERR_CHANOPRIVSNEEDED(client->nick, client->user, params[1])),false);
 	if (!c->user_exist(client->nick))
 		return (this->sendTo(client, client, ERR_NOTONCHANNEL(client->nick, params[1])),false);
 	if (!c->user_exist(params[2]))
 		return (this->sendTo(client, client, ERR_USERNOTINCHANNEL(client->nick, params[2], params[1])),false);
-	if (!c->is_operator(client))
-		return (this->sendTo(client, client, ERR_CHANOPRIVSNEEDED(client->nick, client->user, params[1])),false);
 	if (params.size() >= 3 && params[3][0] == ':')
 	{
 		token.clear();
@@ -249,9 +258,7 @@ bool Server::kick_cmd(std::vector<std::string> params, Client *client)
 		}
 	}
 	Client *cl = c->kick_client(params[2]);
-
-	for (std::vector<Client *>::iterator it = c->users.begin();it != c->users.end();it++)
-			this->sendTo(client, *it, KICK_MSG(client->nick, client->user, params[1], params[2], token));
+	this->broadcast(c, client, KICK_MSG(client->nick, client->user, params[1], params[2], token));
 	this->sendTo(client, cl, KICK_MSG(client->nick, client->user, params[1], params[2], token));
 	return (true);
 }
@@ -289,8 +296,6 @@ bool Server::mode_cmd(std::vector<std::string> params, Client *client)
 		return (this->sendTo(client, client, ERR_NOSUCHCHANNEL(client->nick, params[1])), false);
 	if (!c->user_exist(client->nick))
 		return (this->sendTo(client, client, ERR_NOTONCHANNEL(client->nick, params[1])), false);
-	if (c->mode && !c->is_operator(client))
-		return (this->sendTo(client, client, ERR_CHANOPRIVSNEEDED(client->nick, client->user, params[1])), false);
 	if (params.size() == 2)
 	{
 		std::string modes = "+";
@@ -304,49 +309,58 @@ bool Server::mode_cmd(std::vector<std::string> params, Client *client)
 			modes.append("l");
 		return (this->sendTo(client, client, RPL_CHANNELMODEIS(client->nick, params[1], modes)), false);
 	}
+	if (c->mode && !c->is_operator(client))
+		return (this->sendTo(client, client, ERR_CHANOPRIVSNEEDED(client->nick, client->user, params[1])), false);
 	bool minus = true;
 	if (params[2][0] == '+')
 		minus = false;
-	for (std::string::iterator it = params[2].begin();it != params[2].end();it++)
+	for (std::string::iterator it = params[2].begin() + 1;it != params[2].end();it++)
 	{
-		if (*it != '-' && *it != '+' && *it != 'i' && *it != 't'
+		if (*it != 'i' && *it != 't'
 			&& *it != 'k' && *it != 'o' && *it != 'l')
-			return (this->sendTo(client, client, ERR_UMODEUNKNOWNFLAG(client->nick, client->user)), false);
+			return (this->sendTo(client, client, ERR_UNKNOWNMODE(client->nick, client->user, *it)), false);
 		switch (*it) {
 			case 'i':
 			{
 				c->mode = minus ? 0 : 1;
-				for (std::vector<Client *>::iterator it = c->users.begin();it != c->users.end();it++)
-					this->sendTo(client, *it, RPL_MODE(client->nick, client->user, params[1], (minus ? "-i" : "+i")));
-				break ;
+				this->broadcast(c, client, RPL_MODE(client->nick, client->user, params[1], (minus ? "-i" : "+i")));
+				return (true) ;
 			}
 			case 't':
 			{
 				c->topic_mode = minus ? false : true;
-				for (std::vector<Client *>::iterator it = c->users.begin();it != c->users.end();it++)
-					this->sendTo(client, *it, RPL_MODE(client->nick, client->user, params[1], (minus ? "-t" : "+t")));
-				break ;
+				this->broadcast(c, client, RPL_MODE(client->nick, client->user, params[1], (minus ? "-t" : "+t")));
+				return (true) ;
 			}
 			case 'l':
 			{
+				std::string res;
+				std::ostringstream tmp;
 				c->limit = minus ? 0 : (params.size() > 3 ? std::atoi(params[3].c_str()) : 0);
-				for (std::vector<Client *>::iterator it = c->users.begin();it != c->users.end();it++)
-					this->sendTo(client, *it, RPL_MODE(client->nick, client->user, params[1], (minus ? "-l " + c->limit : "+l " + c->limit)));
-				break ;
+				tmp << c->limit;
+				res = tmp.str();
+				this->broadcast(c, client, RPL_MODE(client->nick, client->user, params[1], (minus ? "-l " + res : "+l " + res)));
+				return (true) ;
 			}
 			case 'k':
 			{
 				c->key = minus ? "" : (params.size() > 3 ? params[3] : "");
-				for (std::vector<Client *>::iterator it = c->users.begin();it != c->users.end();it++)
-					this->sendTo(client, *it, RPL_MODE(client->nick, client->user, params[1], (minus ? "-k " + c->key : "+k " + c->key)));
-				break ;
+				this->broadcast(c, client, RPL_MODE(client->nick, client->user, params[1], (minus ? "-k " + c->key : "+k " + c->key)));
+				return (true) ;
 			}
 			case 'o':
 			{
-				// c->key = minus ? "" : (params.size() > 3 ? params[3] : "");
-				// for (std::vector<Client *>::iterator it = c->users.begin();it != c->users.end();it++)
-				// 	this->sendTo(client, *it, RPL_MODE(client->nick, client->user, params[1], (minus ? "-t" : "+t")));
-				break ;
+				Client *cl = nick_exist(params[3]);
+				if (!cl)
+					return (this->sendTo(client, client, ERR_NOSUCHNICK(client->nick, params[3])), false);
+				if (!minus && c->is_operator(cl))
+					return (true);
+				if (minus)
+					c->rm_operator(cl);
+				else
+					c->operators.push_back(cl);
+				this->broadcast(c, client, RPL_MODE(client->nick, client->user, params[1], (minus ? "-o " + cl->nick : "+o " + cl->nick)));
+				return (true) ;
 			}
 			default:
 				break;
@@ -365,8 +379,7 @@ bool Server::quit_cmd(std::vector<std::string> params, Client *client)
 		std::vector<Client *>::iterator itt = std::find((*it)->users.begin(), (*it)->users.end(), client);
 		if (itt != (*it)->users.end())
 			(*it)->users.erase(itt);
-		for (itt = (*it)->users.begin();itt != (*it)->users.end();itt++)
-				this->sendTo(client, *itt, QUIT_MSG(client->nick, params[1]));
+		this->broadcast((*it), client, QUIT_MSG(client->nick, params[1]));
 		itt = std::find((*it)->operators.begin(), (*it)->operators.end(), client);
 		if (itt != (*it)->operators.end())
 			(*it)->operators.erase(itt);

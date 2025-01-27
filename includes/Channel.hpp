@@ -34,6 +34,7 @@ class Channel
 		bool is_invited(Client *client);
 
 		void rm_invite(Client *client);
+		void rm_operator(Client *client);
 
 		Client *kick_client(const std::string &user);
 };
