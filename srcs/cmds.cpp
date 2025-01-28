@@ -103,6 +103,8 @@ bool Server::user_cmd(std::vector<std::string> params, Client *client)
 
 bool Server::oper_cmd(std::vector<std::string> params, Client *client)
 {
+	if (!client->registered)
+		return (this->sendTo(client, client, ERR_NOTREGISTERED(client->nick)), false);
 	if (params.size() < 3 || params[1].empty() || params[2].empty())
 		return (this->sendTo(client, client, ERR_NEEDMOREPARAMS(client->nick, "OPER")), false);
 	std::map<std::string, std::string>::iterator it = this->operators.find(params[1]);
@@ -115,12 +117,16 @@ bool Server::oper_cmd(std::vector<std::string> params, Client *client)
 
 bool Server::ping_cmd(std::vector<std::string> params, Client *client)
 {
+	if (!client->registered)
+		return (this->sendTo(client, client, ERR_NOTREGISTERED(client->nick)), false);
 	this->sendTo(client, client, PONG(params[1]));
 	return (true);
 }
 
 bool Server::privmsg_cmd(std::vector<std::string> params, Client *client)
 {
+	if (!client->registered)
+		return (this->sendTo(client, client, ERR_NOTREGISTERED(client->nick)), false);
 	std::string token = "";
 	if (params.size() < 3 || params[1].empty() || params[2].empty())
 		return (this->sendTo(client, client, ERR_NEEDMOREPARAMS(client->nick, "PRIVMSG")), false);
@@ -132,6 +138,7 @@ bool Server::privmsg_cmd(std::vector<std::string> params, Client *client)
 		if (it < params.end() - 1)
 			token += " ";
 	}
+	std::cout << "token: " << token << std::endl;
 	if ((params[1])[0] != '#')
 	{
 		Client *c = nick_exist((params[1]));
@@ -157,6 +164,8 @@ bool Server::privmsg_cmd(std::vector<std::string> params, Client *client)
 
 bool Server::join_cmd(std::vector<std::string> params, Client *client)
 {
+	if (!client->registered)
+		return (this->sendTo(client, client, ERR_NOTREGISTERED(client->nick)), false);
 	bool new_channel = false;
 	std::string key = "";
 	if (params.size() < 2 || params[1].empty())
@@ -193,7 +202,7 @@ bool Server::join_cmd(std::vector<std::string> params, Client *client)
 		user_list.append((*it)->nick + " ");
 		this->sendTo(client, *it, JOIN_CHANNEL(client->nick, client->user, c->name));
 	}
-	std::cout << "user_list: " << user_list << std::endl;
+	// std::cout << "user_list: " << user_list << std::endl;
 	if (c->topic.empty())
 		this->sendTo(client, client, RPL_NOTOPIC(client->nick, c->name));
 	else
@@ -205,6 +214,8 @@ bool Server::join_cmd(std::vector<std::string> params, Client *client)
 
 bool Server::topic_cmd(std::vector<std::string> params, Client *client)
 {
+	if (!client->registered)
+		return (this->sendTo(client, client, ERR_NOTREGISTERED(client->nick)), false);
 	std::string token = "";
 	if (params.size() < 2 || params[1].empty())
 		return (this->sendTo(client, client, ERR_NEEDMOREPARAMS(client->nick, "TOPIC")), false);
@@ -234,6 +245,8 @@ bool Server::topic_cmd(std::vector<std::string> params, Client *client)
 
 bool Server::kick_cmd(std::vector<std::string> params, Client *client)
 {
+	if (!client->registered)
+		return (this->sendTo(client, client, ERR_NOTREGISTERED(client->nick)), false);
 	std::string token = "Default kick message";
 	if (params.size() < 3 || params[1].empty() || params[2].empty())
 		return (this->sendTo(client, client, ERR_NEEDMOREPARAMS(client->nick, "KICK")), false);
@@ -265,6 +278,8 @@ bool Server::kick_cmd(std::vector<std::string> params, Client *client)
 
 bool Server::invite_cmd(std::vector<std::string> params, Client *client)
 {
+	if (!client->registered)
+		return (this->sendTo(client, client, ERR_NOTREGISTERED(client->nick)), false);
 	if (params.size() < 3 || params[1].empty() || params[2].empty())
 		return (this->sendTo(client, client, ERR_NEEDMOREPARAMS(client->nick, "INVITE")), false);
 	Channel *c = channel_exist(params[2]);
@@ -287,6 +302,8 @@ bool Server::invite_cmd(std::vector<std::string> params, Client *client)
 
 bool Server::mode_cmd(std::vector<std::string> params, Client *client)
 {
+	if (!client->registered)
+		return (this->sendTo(client, client, ERR_NOTREGISTERED(client->nick)), false);
 	if (params.size() < 2)
 		return (this->sendTo(client, client, ERR_NEEDMOREPARAMS(client->nick, "MODE")), false);
 	if (params[1][0] != '#')
@@ -371,6 +388,8 @@ bool Server::mode_cmd(std::vector<std::string> params, Client *client)
 
 bool Server::quit_cmd(std::vector<std::string> params, Client *client)
 {
+	if (!client->registered)
+		return (this->sendTo(client, client, ERR_NOTREGISTERED(client->nick)), false);
 	client->is_used = false;
 	client->registered = false;
 	client->authenticated = false;

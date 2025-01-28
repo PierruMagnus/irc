@@ -106,7 +106,10 @@ Client *Channel::kick_client(const std::string &user)
 }
 
 Channel::Channel(const std::string &str): topic("TOPICKEK"), name(str), mode(1), topic_mode(true), key(""), limit(2)
-{}
+{
+	if (str == "#bot")
+		this->mode = 0;
+}
 
 Channel::~Channel()
 {

@@ -40,7 +40,7 @@
 // MESSAGE REPLY
 #define CHANGING_NICK(client, user, nick) ":" + client + "!" + user + "@localhost" + " NICK " + nick + "" RESET_COLOR "\r\n"
 #define PONG(token) "PONG localhost " + token + "" RESET_COLOR "\r\n"
-#define SEND_PRIVMSG(client, user, to, msg) ":" + client + "!" + user + "@localhost" + " PRIVMSG " + to + " " + msg + "\r\n"
+#define SEND_PRIVMSG(to, msg) "PRIVMSG " + to + " " + msg + "" RESET_COLOR "\r\n"
 #define JOIN_CHANNEL(client, user, channel) ":" + client + "!" + user + "@localhost" + " JOIN " + channel + "" RESET_COLOR "\r\n"
 #define SEND_TOPIC(channel, topic) "TOPIC " + channel + " :" + topic + "" RESET_COLOR "\r\n"
 #define QUIT_MSG(client, msg) ":" + client + " QUIT " + msg + "" RESET_COLOR "\r\n"

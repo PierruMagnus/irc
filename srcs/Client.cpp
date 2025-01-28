@@ -1,13 +1,14 @@
 #include "../includes/Client.hpp"
 
 Client::Client(): is_used(false), registered(false), authenticated(false),
-				  is_operator(false), quit(false), nick(""), user("")
+				  is_operator(false), quit(false), type(NC), nick(""), user("")
 {}
 
 Client &Client::operator=(const Client& src)
 {
     if(this != &src)
 	{
+		this->type = src.type;
 		this->authenticated = src.authenticated;
 		this->client_fd = src.client_fd;
 		this->is_operator = src.is_operator;

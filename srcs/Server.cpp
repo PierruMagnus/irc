@@ -53,14 +53,7 @@ Server::~Server()
 	}
 	this->operators.clear();
 	for (std::set<Channel *>::iterator it = this->channels.begin();it != this->channels.end();it++)
-	{
-		// (*it)->name.clear();
-		// (*it)->topic.clear();
-		// (*it)->key.clear();
-		// (*it)->users.clear();
-		// (*it)->operators.clear();
 		delete *it;
-	}
 	this->channels.clear();
 	exit(0);
 }
@@ -152,13 +145,22 @@ void Server::parse_cmd(std::string buffer, Client *client)
 {
 	std::vector<std::string> cmds;
 	std::vector<std::vector<std::string> > tokens;
+	std::string delim = "\r\n";
 
-	char *cmd = std::strtok(&buffer[0], "\r\n");
-	while (cmd != NULL)
-	{
-		cmds.push_back(cmd);
-		cmd = std::strtok(NULL, "\r\n");
-	}
+	// char *cmd = std::strtok(&buffer[0], "\r\n");
+	size_t pos = 0;
+    std::string token;
+    while ((pos = buffer.find(delim)) != std::string::npos) {
+        token = buffer.substr(0, pos);
+        cmds.push_back(token);
+        buffer.erase(0, pos + delim.length());
+    }
+    cmds.push_back(buffer);
+	// while (cmd != NULL)
+	// {
+	// 	cmds.push_back(cmd);
+	// 	cmd = std::strtok(NULL, "\r\n");
+	// }
 
 	for (std::vector<std::string>::iterator it = cmds.begin(); it < cmds.end() ;it++)
 	{
@@ -174,6 +176,11 @@ void Server::parse_cmd(std::string buffer, Client *client)
 
 	for (std::vector<std::vector<std::string> >::iterator it = tokens.begin();it < tokens.end();it++)
 	{
+		if ((*it)[0] == "CAP")
+		{
+			client->type = client->IRSSI;
+			continue ;
+		}
 		if ((*it)[0] == "PASS" && !pass_cmd(*it, client))
 			break ;
 		if ((*it)[0] == "NICK" && !nick_cmd(*it, client))
@@ -252,7 +259,6 @@ void Server::handle_client_event(int client_fd, uint32_t revents)
 		if (buffer[recv_ret - 2] == '\r')
 			buf = buf.substr(0, recv_ret - 2);
 		debug(buf, &this->clients[index], 0);
-		// std::cout << getTime() << ": Client " << this->clients[index].src_ip << ":" << this->clients[index].src_port << " sends: " << buffer << std::endl;
 		parse_cmd(buf, &this->clients[index]);
         epoll_mod(this->_epoll_fd, client_fd, EPOLLIN | EPOLLOUT, index);
 	}
@@ -261,7 +267,6 @@ void Server::handle_client_event(int client_fd, uint32_t revents)
 		for (std::vector<std::pair<Client *, std::string> >::iterator it = this->clients[index].sendto.begin();it != this->clients[index].sendto.end();it++)
 		{
 			debug((*it).second, (*it).first, 1);
-			// std::cout << "send_buffer: " << (*it).first->nick << " | " << (*it).second << std::endl;
 			ssize_t sent = send((*it).first->client_fd, (*it).second.c_str(), (*it).second.size(), 0);
 			if (sent < 0) {
 				if (errno == EAGAIN)
@@ -305,7 +310,6 @@ void Server::run()
 	
 	epoll_add_new(this->_epoll_fd, this->_sock_fd, EPOLLIN);
 
-	// debug("Server listening on port " + std::to_string(this->_port), NULL, 0);
 	std::cout << "INFO: " << getTime() << ": " << "Server listening on port " << this->_port << "." << std::endl;
 
 	int epoll_ret;
@@ -314,10 +318,10 @@ void Server::run()
 
 	while (1)
 	{
-		epoll_ret = epoll_wait(this->_epoll_fd, events, 32, 3000);
+		epoll_ret = epoll_wait(this->_epoll_fd, events, 32, 5000);
 		if (epoll_ret == 0)
 		{
-			std::cerr << "no events within 3000 milliseconds." << std::endl;
+			std::cout << "no events within 5000 milliseconds." << std::endl;
 			continue ;
 		}
 		if (epoll_ret == -1)

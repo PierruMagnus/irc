@@ -14,6 +14,12 @@ class Client
 		Client();
 		Client& operator=(const Client& src);
 		~Client();
+
+		enum Ctype {
+			NC,
+			IRSSI
+		};
+
 		bool is_used;
 		int client_fd;
 		std::string src_ip;
@@ -24,6 +30,7 @@ class Client
 		bool authenticated;
 		bool is_operator;
 		bool quit;
+		Ctype type;
 		std::string nick;
 		std::string user;
 		std::string realname;
