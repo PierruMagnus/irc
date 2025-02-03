@@ -191,7 +191,7 @@ void Server::parse_cmd(std::string buffer, Client *client)
 			break ;
 		if ((*it)[0] == "QUIT" && quit_cmd(*it, client))
 			break ;
-		if ((*it)[0] == "PRIVMSG" && privmsg_cmd(*it, client))
+		if ((*it)[0] == "PRIVMSG" && !privmsg_cmd(*it, client))
 			break ;
 		if ((*it)[0] == "JOIN" && join_cmd(*it, client))
 			break ;

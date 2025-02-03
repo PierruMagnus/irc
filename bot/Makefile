@@ -6,14 +6,14 @@
 #    By: pmagnero <pmagnero@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/11/04 11:30:16 by pmagnero          #+#    #+#              #
-#    Updated: 2025/01/28 13:02:26 by pmagnero         ###   ########.fr        #
+#    Updated: 2025/02/03 15:08:34 by pmagnero         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 
 NAME				=	bot
 
-FLAG				= -Wall -Wextra -Werror -std=c++98 -pedantic -ggdb #
+FLAG				= -Wall -Wextra -std=c++98 -pedantic -ggdb #-Werror
 
 SRCS				=	srcs/main.cpp \
 						srcs/Server.cpp \

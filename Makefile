@@ -6,14 +6,14 @@
 #    By: pmagnero <pmagnero@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/11/04 11:30:16 by pmagnero          #+#    #+#              #
-#    Updated: 2025/01/27 18:07:59 by pmagnero         ###   ########.fr        #
+#    Updated: 2025/02/03 15:08:43 by pmagnero         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 
 NAME				=	ircserv
 
-FLAG				= -Wall -Wextra -Werror -std=c++98 -pedantic -ggdb #
+FLAG				= -Wall -Wextra -std=c++98 -pedantic -ggdb #-Werror
 
 SRCS				=	srcs/main.cpp \
 						srcs/Server.cpp \

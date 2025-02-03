@@ -6,7 +6,7 @@
 /*   By: pmagnero <pmagnero@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/10 10:01:22 by pmagnero          #+#    #+#             */
-/*   Updated: 2025/01/28 19:05:29 by pmagnero         ###   ########.fr       */
+/*   Updated: 2025/02/03 18:49:47 by pmagnero         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,11 +68,15 @@ class Server
 			std::string name;
 			std::string wordtoguess;
 			std::string lettersfound;
+			std::string hiddenword;
 			int			attemptsnb;
 		};
 
 		std::vector<std::string>	wordlist;
 		std::vector<client>			clients;
+
+		client *clientexist(const std::string &client);
+		void rmclient(const std::string &client);
 		
 		int accept_new_client(int fd);
 		void handle_client_event(int client_fd, uint32_t revents);

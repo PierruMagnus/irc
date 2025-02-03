@@ -68,3 +68,75 @@
 
 #define RPL_CHANNELMODEIS(client, channel, mode) ":localhost 324 " + client + " " + channel + " " + mode + "" RESET_COLOR "\r\n"
 #define RPL_MODE(client, user, channel, mode) ":" + client + "!" + user + "@localhost MODE " + channel + " " + mode + "" RESET_COLOR "\r\n"
+
+#define attempt1 "\n\
+  +---+\n\
+  |   |\n\
+      |\n\
+      |\n\
+      |\n\
+      |\n\
+=========\n"
+
+#define attempt2 "\n\
+  +---+\n\
+  |   |\n\
+  o   |\n\
+      |\n\
+      |\n\
+      |\n\
+=========\n"
+
+#define attempt3 "\n\
+  +---+\n\
+  |   |\n\
+  o   |\n\
+  |   |\n\
+      |\n\
+      |\n\
+=========\n"
+
+#define attempt4 "\n\
+  +---+\n\
+  |   |\n\
+  o   |\n\
+ /|   |\n\
+      |\n\
+      |\n\
+=========\n"
+
+#define attempt5 "\n\
+  +---+\n\
+  |   |\n\
+  o   |\n\
+ /|\\ |\n\
+      |\n\
+      |\n\
+=========\n"
+
+#define attempt6 "\n\
+  +---+\n\
+  |   |\n\
+  o   |\n\
+ /|\\ |\n\
+ /    |\n\
+      |\n\
+=========\n"
+
+#define attempt7 "\n\
+  +---+\n\
+  |   |\n\
+  o   |\n\
+ /|\\ |\n\
+ / \\ |\n\
+      |\n\
+=========\n"
+
+#define gameover "\n\
+      __ _  __ _ _ __ ___   ___    _____   _____ _ __ \n\
+     / _` |/ _` | '_ ` _ \\ / _ \\  / _ \\ \\ / / _ | '__|\n\
+    | (_| | (_| | | | | | |  __/ | (_) \\ V |  __| |   \n\
+     \\__, |\\__,_|_| |_| |_|\\___|  \\___/ \\_/ \\___|_|   \n\
+      __/ |                                           \n\
+     |___/ \n"
+

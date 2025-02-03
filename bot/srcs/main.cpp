@@ -6,7 +6,7 @@
 /*   By: pmagnero <pmagnero@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/10 09:54:30 by pmagnero          #+#    #+#             */
-/*   Updated: 2025/01/28 13:40:19 by pmagnero         ###   ########.fr       */
+/*   Updated: 2025/02/03 14:54:03 by pmagnero         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,7 +74,7 @@ unsigned int checkArgs(int ac, char **av)
 	if (ac != 3)
 	{
 		std::cerr << "Error: Bad number of arguments." << std::endl;
-		std::cerr << "Usage: ./ircserv <port> <password>" << std::endl;
+		std::cerr << "Usage: ./bot <port> <password>" << std::endl;
 		exit(1);
 	}
 
