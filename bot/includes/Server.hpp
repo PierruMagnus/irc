@@ -6,7 +6,7 @@
 /*   By: pmagnero <pmagnero@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/10 10:01:22 by pmagnero          #+#    #+#             */
-/*   Updated: 2025/02/03 18:49:47 by pmagnero         ###   ########.fr       */
+/*   Updated: 2025/02/04 16:57:37 by pmagnero         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,7 +67,7 @@ class Server
 		struct client {
 			std::string name;
 			std::string wordtoguess;
-			std::string lettersfound;
+			std::string letters;
 			std::string hiddenword;
 			int			attemptsnb;
 		};

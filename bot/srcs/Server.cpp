@@ -119,7 +119,6 @@ void Server::rmclient(const std::string &name)
 	}
 }
 
-
 bool Server::privmsg_cmd(std::vector<std::string> params)
 {
 	std::string token = "";
@@ -148,7 +147,7 @@ bool Server::privmsg_cmd(std::vector<std::string> params)
 		c.name = to;
 		c.attemptsnb = 7;
 		c.wordtoguess = this->wordlist[rand() % this->wordlist.size()];
-		c.lettersfound = "";
+		c.letters = "";
 		std::cout << "wordtoguess: " << c.wordtoguess << std::endl;
 		std::string hiddenword(c.wordtoguess.size(), '*');
 		c.hiddenword = hiddenword;
@@ -176,31 +175,37 @@ bool Server::privmsg_cmd(std::vector<std::string> params)
 		unsigned int i = 0;
 		if (!c)
 			return (this->sendTo("PRIVMSG " + to + " :" ERR_COLOR "No game running, so there is nothing to guess dumbass." RESET_COLOR "\r\n"), false);
-		std::string::iterator it = std::find(c->lettersfound.begin(), c->lettersfound.end(), params[5][0]);
-		if (it != c->lettersfound.end())
+		std::string::iterator it = std::find(c->letters.begin(), c->letters.end(), params[5][0]);
+		if (it != c->letters.end())
 			return (this->sendTo("PRIVMSG " + to + " :" ERR_COLOR "You already tried this letter, try another one." RESET_COLOR "\r\n"), true);
-		for (std::string::iterator it = c->wordtoguess.begin();it != c->wordtoguess.end();it++)
+		c->letters.append(&params[5][0]);
+		for (size_t s = 0; s < c->wordtoguess.size();s++)
 		{
-			if (*it == params[5][0])
+			if (c->wordtoguess[s] == params[5][0])
 			{
-				c->hiddenword.replace(it, it+1, 1, params[5][0]);
-				c->lettersfound.append(&params[5][0]);
+				c->hiddenword[s] = c->wordtoguess[s];
+				std::cout << "c->hiddenword: " << c->hiddenword << std::endl;
 				i++;
 			}
 		}
+		std::stringstream q;
+		std::string f;
 		if (!i)
 		{
 			c->attemptsnb--;
+			q << c->attemptsnb;
+			f.append(q.str());
 			if (c->attemptsnb == 0)
-				return (this->sendTo("PRIVMSG " + to + " :" MSG_COLOR gameover RESET_COLOR "\r\n"), true);
+				return (this->rmclient(to), this->sendTo("PRIVMSG " + to + " :" MSG_COLOR gameover RESET_COLOR "\r\n"), true);
 			this->sendTo("PRIVMSG " + to + " :" MSG_COLOR "The letter \"" + params[5][0] + "\" is not in the word to guess." RESET_COLOR "\r\n");
+			this->sendTo("PRIVMSG " + to + " :" MSG_COLOR "Word to guess (" + f + " attempt left): " + c->hiddenword + "" RESET_COLOR "\r\n");
 			return (true);
 		}
-		std::stringstream q;
-		std::string f;
+		if (!c->wordtoguess.compare(c->hiddenword))
+			return (this->rmclient(to), this->sendTo("PRIVMSG " + to + " :" MSG_COLOR "Congratulation, you guessed the word !!" RESET_COLOR "\r\n"), true);
 		q << c->attemptsnb;
 		f.append(q.str());
-		this->sendTo("PRIVMSG " + to + " :" MSG_COLOR "Word to guess (" + f + " attempt left): " + c->lettersfound + "" RESET_COLOR "\r\n");
+		this->sendTo("PRIVMSG " + to + " :" MSG_COLOR "Word to guess (" + f + " attempt left): " + c->hiddenword + "" RESET_COLOR "\r\n");
 		return (true);
 	}
 	if (params[4] == "stop")
