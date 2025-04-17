@@ -12,6 +12,7 @@ Channel &Channel::operator=(const Channel& src)
 		this->mode = src.mode;
 		this->name = src.name;
 		this->topic = src.topic;
+		this->topic_mode = src.topic_mode;
 		for (std::vector<Client *>::const_iterator it = src.users.begin();it != src.users.end();it++)
 			this->users.push_back(*it);
 		for (std::vector<Client *>::const_iterator it = src.invite.begin();it != src.invite.end();it++)

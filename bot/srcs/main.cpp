@@ -6,7 +6,7 @@
 /*   By: pmagnero <pmagnero@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/10 09:54:30 by pmagnero          #+#    #+#             */
-/*   Updated: 2025/02/03 14:54:03 by pmagnero         ###   ########.fr       */
+/*   Updated: 2025/02/11 17:21:22 by pmagnero         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,7 +79,6 @@ unsigned int checkArgs(int ac, char **av)
 	}
 
 	port = checkPort(av[1]);
-	// checkPassword(av[2]);
 
 	return (port);
 }
@@ -122,17 +121,6 @@ int main(int ac, char **av)
 	instance = &server;
 
 	server.run();
-	// (void)ac;
-	// (void)av;
-	// Kek kek;
-	// // std::vector<std::string> kek;
-	// // std::string lol = "hey";
-	// const std::string& lul = "NICK bot\r\n";
-	// kek.sendTo(lul);
-	// // for (std::vector<std::string>::iterator it = kek.lol.begin();it != kek.lol.end();it++)
-	// // 	(*it).clear();
-	// // kek.lol.clear();
-	// // kek.lol.clear();
 
 	return (0);
 }

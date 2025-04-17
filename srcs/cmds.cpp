@@ -89,13 +89,13 @@ bool Server::user_cmd(std::vector<std::string> params, Client *client)
 	client->realname = params[4];
 	if (params.size() > 5)
 		client->realname += params[5];
-	msg = RPL_WELCOME(client->nick);
-	msg += RPL_YOURHOST(client->nick);
-	msg += RPL_CREATED(client->nick, getTime());
-	msg += RPL_MYINFO(client->nick, "3.0", "aiorsw", "itkol");
-	msg += RPL_MOTDSTART(client->nick);
-	msg += RPL_MOTD(client->nick);
-	msg += RPL_ENDOFMOTD(client->nick);
+	msg = RPL_WELCOME(client->nick, client->user);
+	msg += RPL_YOURHOST(client->nick, client->user);
+	msg += RPL_CREATED(client->nick, client->user, getTime());
+	msg += RPL_MYINFO(client->nick, client->user, "3.0", "aiorsw", "itkol");
+	msg += RPL_MOTDSTART(client->nick, client->user);
+	msg += RPL_MOTD(client->nick, client->user);
+	msg += RPL_ENDOFMOTD(client->nick, client->user);
 	client->registered = true;
 	this->sendTo(client, client, msg);
 	return (true);
@@ -111,7 +111,7 @@ bool Server::oper_cmd(std::vector<std::string> params, Client *client)
 	if (it == this->operators.end() || params[2] != it->second)
 		return (this->sendTo(client, client, ERR_PASSWDMISMATCH(client->nick)), false);
 	client->is_operator = true;
-	this->sendTo(client, client, RPL_YOUREOPER(client->nick));
+	this->sendTo(client, client, RPL_YOUREOPER(client->nick, client->user));
 	return (true);
 }
 
@@ -138,7 +138,6 @@ bool Server::privmsg_cmd(std::vector<std::string> params, Client *client)
 		if (it < params.end() - 1)
 			token += " ";
 	}
-	std::cout << "token: " << token << std::endl;
 	if ((params[1])[0] != '#')
 	{
 		Client *c = nick_exist((params[1]));
@@ -186,7 +185,7 @@ bool Server::join_cmd(std::vector<std::string> params, Client *client)
 		new_channel = true;
 		c->key = key;
 	}
-	if (c->users.size() >= c->limit)
+	if (c->limit && c->users.size() >= c->limit)
 		return (this->sendTo(client, client, ERR_CHANNELISFULL(client->nick, c->name)), false);
 	if (key != c->key)
 		return (this->sendTo(client, client, ERR_BADCHANNELKEY(client->nick, c->name)), false);
@@ -202,13 +201,12 @@ bool Server::join_cmd(std::vector<std::string> params, Client *client)
 		user_list.append((*it)->nick + " ");
 		this->sendTo(client, *it, JOIN_CHANNEL(client->nick, client->user, c->name));
 	}
-	// std::cout << "user_list: " << user_list << std::endl;
 	if (c->topic.empty())
-		this->sendTo(client, client, RPL_NOTOPIC(client->nick, c->name));
+		this->sendTo(client, client, RPL_NOTOPIC(client->nick, client->user, c->name));
 	else
-		this->sendTo(client, client, RPL_TOPIC(client->nick, c->name, c->topic));
-	this->sendTo(client, client, RPL_NAMREPLY(client->nick, c->name, user_list));
-	this->sendTo(client, client, RPL_ENDOFNAMES(client->nick, c->name));
+		this->sendTo(client, client, RPL_TOPIC(client->nick, client->user, c->name, c->topic));
+	this->sendTo(client, client, RPL_NAMREPLY(client->nick, client->user, c->name, user_list));
+	this->sendTo(client, client, RPL_ENDOFNAMES(client->nick, client->user, c->name));
 	return (true);
 }
 
@@ -224,12 +222,12 @@ bool Server::topic_cmd(std::vector<std::string> params, Client *client)
 		return (this->sendTo(client, client, ERR_NOSUCHCHANNEL(client->nick, params[1])), false);
 	if (!c->user_exist(client->nick))
 		return (this->sendTo(client, client, ERR_NOTONCHANNEL(client->nick, params[1])), false);
-	if (params.size() < 3 && c->topic_mode && !c->is_operator(client))
+	if (params.size() < 4 && c->topic_mode && !c->is_operator(client))
 		return (this->sendTo(client, client, ERR_CHANOPRIVSNEEDED(client->nick, client->user, params[1])), false);
 	if (params.size() == 2 && !c->topic.empty())
-		return (this->sendTo(client, client, RPL_TOPIC(client->nick, params[1], c->topic)), true);
+		return (this->sendTo(client, client, RPL_TOPIC(client->nick, client->user, params[1], c->topic)), true);
 	else if (params.size() == 2 && c->topic.empty())
-		return (this->sendTo(client, client, RPL_NOTOPIC(client->nick, params[1])), true);
+		return (this->sendTo(client, client, RPL_NOTOPIC(client->nick, client->user, params[1])), true);
 	if (params[2][0] == ':')
 		params[2].erase(0, 1);
 	for (std::vector<std::string>::iterator it = params.begin() + 2;it != params.end();it++)
@@ -239,7 +237,7 @@ bool Server::topic_cmd(std::vector<std::string> params, Client *client)
 			token += " ";
 	}
 	c->topic = token;
-	this->broadcast(c, client, SEND_TOPIC(params[1], token));
+	this->broadcast(c, client, SEND_TOPIC(client->nick, client->user, params[1], token));
 	return (true);
 }
 
@@ -295,7 +293,7 @@ bool Server::invite_cmd(std::vector<std::string> params, Client *client)
 	if (!cl)
 		return (this->sendTo(client, client, ERR_NOSUCHNICK(client->nick, params[1])),false);
 	c->invite.push_back(cl);
-	this->sendTo(client, client, RPL_INVITING(client->nick, params[1], params[2]));
+	this->sendTo(client, client, RPL_INVITING(client->nick, client->user, params[1], params[2]));
 	this->sendTo(client, cl, SEND_INVITE(client->nick, client->user, params[1], params[2]));
 	return (true);
 }
@@ -324,7 +322,7 @@ bool Server::mode_cmd(std::vector<std::string> params, Client *client)
 			modes.append("k");
 		if (c->limit > 0)
 			modes.append("l");
-		return (this->sendTo(client, client, RPL_CHANNELMODEIS(client->nick, params[1], modes)), false);
+		return (this->sendTo(client, client, RPL_CHANNELMODEIS(client->nick, client->user, params[1], modes)), false);
 	}
 	if (c->mode && !c->is_operator(client))
 		return (this->sendTo(client, client, ERR_CHANOPRIVSNEEDED(client->nick, client->user, params[1])), false);
@@ -393,12 +391,14 @@ bool Server::quit_cmd(std::vector<std::string> params, Client *client)
 	client->is_used = false;
 	client->registered = false;
 	client->authenticated = false;
+	std::set<Client *> userToBroadcast;
 	for (std::set<Channel *>::iterator it = this->channels.begin();it != this->channels.end();)
 	{
 		std::vector<Client *>::iterator itt = std::find((*it)->users.begin(), (*it)->users.end(), client);
 		if (itt != (*it)->users.end())
 			(*it)->users.erase(itt);
-		this->broadcast((*it), client, QUIT_MSG(client->nick, params[1]));
+		for (std::vector<Client *>::iterator ittt = (*it)->users.begin();ittt != (*it)->users.end();ittt++)
+			userToBroadcast.insert(*ittt);
 		itt = std::find((*it)->operators.begin(), (*it)->operators.end(), client);
 		if (itt != (*it)->operators.end())
 			(*it)->operators.erase(itt);
@@ -410,5 +410,7 @@ bool Server::quit_cmd(std::vector<std::string> params, Client *client)
 		else
 			++it;
 	}
+	for (std::set<Client *>::iterator it = userToBroadcast.begin();it != userToBroadcast.end();it++)
+		this->sendTo(client, (*it), QUIT_MSG(client->nick, client->user, params[1]));
 	return (true);
 }

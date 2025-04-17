@@ -1,5 +1,4 @@
 #include "../includes/Server.hpp"
-// #include "cmds.cpp"
 
 Server::Server(unsigned int port, const std::string& password): _port(port), _password(password)
 {
@@ -147,7 +146,6 @@ void Server::parse_cmd(std::string buffer, Client *client)
 	std::vector<std::vector<std::string> > tokens;
 	std::string delim = "\r\n";
 
-	// char *cmd = std::strtok(&buffer[0], "\r\n");
 	size_t pos = 0;
     std::string token;
     while ((pos = buffer.find(delim)) != std::string::npos) {
@@ -156,14 +154,11 @@ void Server::parse_cmd(std::string buffer, Client *client)
         buffer.erase(0, pos + delim.length());
     }
     cmds.push_back(buffer);
-	// while (cmd != NULL)
-	// {
-	// 	cmds.push_back(cmd);
-	// 	cmd = std::strtok(NULL, "\r\n");
-	// }
 
 	for (std::vector<std::string>::iterator it = cmds.begin(); it < cmds.end() ;it++)
 	{
+		if ((*it).empty())
+			continue;
 		char *token = std::strtok(&(*it)[0], " ");
 		std::vector<std::string> tmp;
 		while (token != NULL)

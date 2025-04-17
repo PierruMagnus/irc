@@ -4,17 +4,6 @@
 Server::Server(unsigned int port, const std::string& password): _port(port), _password(password)
 {
 	this->connection = true;
-	// const size_t client_slot_num = sizeof(this->clients) / sizeof(*this->clients);
-	// const size_t client_slot_map_num = sizeof(this->client_map) / sizeof(*this->client_map);
-
-	// for (size_t i = 0; i < client_slot_num; i++)
-	// {
-	// 	this->clients[i].is_used = false;
-	// 	this->clients[i].client_fd = -1;
-	// }
-
-	// for (uint16_t i = 0; i < client_slot_map_num; i++)
-	// 	this->client_map[i] = 0u;
 
 	this->_epoll_fd = epoll_create(255);
 	if (this->_epoll_fd < 0)
@@ -127,17 +116,12 @@ bool Server::privmsg_cmd(std::vector<std::string> params)
 	to = params[0].substr(0, params[0].find_first_of('!'));
 	if (params.size() < 5 || params[4].empty())
 		return (this->sendTo("PRIVMSG " + to + " :" ERR_COLOR "Not enough parameters" RESET_COLOR "\r\n"), false);
-	std::cout << "message: " << std::endl;
-	int i = 0;
-	for (std::vector<std::string>::iterator it = params.begin();it != params.end();it++)
-		std::cout << i++ << ": " << (*it) << " | ";
-	std::cout << std::endl;
+	// std::cout << "message: " << std::endl;
+	// int i = 0;
+	// for (std::vector<std::string>::iterator it = params.begin();it != params.end();it++)
+	// 	std::cout << i++ << ": " << (*it) << " | ";
+	// std::cout << std::endl;
 	params[3].erase(0, 1);
-	// for (std::string::iterator it = params[4].begin();it != params[4].end();it++)
-	// 	std::cout << +(*it) << " | " << std::endl;
-	// std::string kek = "start";
-	// std::cout << "params[3]: " << params[3] << std::endl;
-	// std::cout << "params[4]: " << params[4].size() << kek.size() << "." << std::endl;
 	if (params[3] != "/bot")
 		return (this->sendTo("PRIVMSG " + to + " :" ERR_COLOR "Unknown command" RESET_COLOR "\r\n"), false);
 	if (params[4] == "start")
@@ -196,7 +180,7 @@ bool Server::privmsg_cmd(std::vector<std::string> params)
 			q << c->attemptsnb;
 			f.append(q.str());
 			if (c->attemptsnb == 0)
-				return (this->rmclient(to), this->sendTo("PRIVMSG " + to + " :" MSG_COLOR gameover RESET_COLOR "\r\n"), true);
+				return (this->rmclient(to), this->sendTo("PRIVMSG " + to + " :" MSG_COLOR "game over, loser! \n" gameover RESET_COLOR "\r\n"), true);
 			this->sendTo("PRIVMSG " + to + " :" MSG_COLOR "The letter \"" + params[5][0] + "\" is not in the word to guess." RESET_COLOR "\r\n");
 			this->sendTo("PRIVMSG " + to + " :" MSG_COLOR "Word to guess (" + f + " attempt left): " + c->hiddenword + "" RESET_COLOR "\r\n");
 			return (true);
@@ -221,9 +205,6 @@ bool Server::privmsg_cmd(std::vector<std::string> params)
 	}
 
 	return (this->sendTo("PRIVMSG " + to + " :" ERR_COLOR "Unknown command" RESET_COLOR "\r\n"), false);
-	// std::string name = "bot";
-	// std::cout << "privmsg_cmd: " << token << std::endl;
-	// return (this->sendTo(SEND_PRIVMSG(name, name, to, token)), true);
 }
 
 void Server::parse_cmd(std::string buffer)
@@ -254,7 +235,6 @@ void Server::parse_cmd(std::string buffer)
 	{
 		if ((*it).size() > 1)
 		{
-			std::cout << "vec: " << (*it)[1] << std::endl;
 			if ((*it)[1] == "PRIVMSG" && privmsg_cmd(*it))
 				break ;
 		}
@@ -267,13 +247,10 @@ void Server::handle_client_event(int client_fd, uint32_t revents)
 	ssize_t recv_ret;
 	char buffer[1024];
 	const uint32_t err_mask = EPOLLERR | EPOLLHUP;
-
-	// uint32_t index = this->client_map[client_fd] - 1u;
 	
 	if (revents & err_mask)
 	{
 		std::cerr << "revents & err_mask Server has closed its connection" << std::endl;
-		// std::cerr << "Client " << this->clients[index].src_ip << ":" << this->clients[index].src_port << " has closed its connection." << std::endl;
 		if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) < 0)
 			std::cerr << "epoll_ctl(EPOLL_CTL_DEL) failed." << std::endl;
 		close(client_fd);
@@ -285,7 +262,6 @@ void Server::handle_client_event(int client_fd, uint32_t revents)
 		if (recv_ret == 0)
 		{
 			std::cerr << "recv() == 0 Server has closed its connection" << std::endl;
-			// std::cerr << "Client " << this->clients[index].src_ip << ":" << this->clients[index].src_port << " has closed its connection." << std::endl;
 			if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) < 0)
 				std::cerr << "epoll_ctl(EPOLL_CTL_DEL) failed." << std::endl;
 			close(client_fd);
@@ -298,7 +274,6 @@ void Server::handle_client_event(int client_fd, uint32_t revents)
 				return ;
 			std::cerr << "recv() failed." << std::endl;
 			std::cerr << "recv() < 0 Server has closed its connection" << std::endl;
-			// std::cerr << "Client " << this->clients[index].src_ip << ":" << this->clients[index].src_port << " has closed its connection." << std::endl;
 			if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) < 0)
 				std::cerr << "epoll_ctl(EPOLL_CTL_DEL) failed." << std::endl;
 			close(client_fd);
@@ -321,7 +296,6 @@ void Server::handle_client_event(int client_fd, uint32_t revents)
 			this->sendTo(msg);
 			this->sendTo("NICK bot\r\n");
 			this->sendTo("USER bot bot localhost :Botname\r\n");
-			// this->sendTo("JOIN #bot\r\n");
 			connection = false;
 		}
 		for (std::vector<std::string>::iterator it = this->sendto.begin();it != this->sendto.end();it++)
@@ -387,13 +361,6 @@ void Server::run()
 		for (int i = 0; i < epoll_ret; i++)
 		{
 			int fd = events[i].data.fd;
-
-			// if (fd == this->_sock_fd)
-			// {
-			// 	if (accept_new_client(fd) < 0)
-			// 		Server::stop();
-			// 	continue ;
-			// }
 			handle_client_event(fd, events[i].events);
 		}
 	}

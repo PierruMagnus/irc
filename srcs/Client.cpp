@@ -22,7 +22,6 @@ Client &Client::operator=(const Client& src)
 		this->src_ip = src.src_ip;
 		this->src_port = src.src_port;
 		this->user = src.user;
-		std::cout << "Copy operator called" << std::endl;
 	}
     return *this;
 }

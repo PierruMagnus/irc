@@ -6,14 +6,14 @@
 #    By: pmagnero <pmagnero@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/11/04 11:30:16 by pmagnero          #+#    #+#              #
-#    Updated: 2025/02/03 15:08:43 by pmagnero         ###   ########.fr        #
+#    Updated: 2025/02/11 17:35:20 by pmagnero         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 
 NAME				=	ircserv
 
-FLAG				= -Wall -Wextra -std=c++98 -pedantic -ggdb #-Werror
+FLAG				= -Wall -Wextra -Werror -std=c++98 -pedantic
 
 SRCS				=	srcs/main.cpp \
 						srcs/Server.cpp \
@@ -90,7 +90,11 @@ clean:
 
 fclean: clean
 	@rm -f $(NAME)
+	@make fclean -C bot
 
 re: fclean all
 
-.PHONY: all extfunc valgrind clean fclean re
+bonus:all
+	@make re -C bot
+
+.PHONY: all extfunc valgrind clean fclean re bonus
